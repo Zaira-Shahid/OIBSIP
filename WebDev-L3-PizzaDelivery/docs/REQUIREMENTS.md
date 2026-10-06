@@ -18,7 +18,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U7  | Cheese selection                         | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U8  | Multiple vegetable selection             | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U9  | Order summary                            | 6                 | `OrderSummary`, `PizzaBreakdown`, `POST /api/orders` | `server/tests/orders.test.js` | ✅ API tests pass; browser check done by Zaira |
-| U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | 🚧 mocked tests pass; real test-mode checkout pending your keys |
+| U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | ✅ approved by Zaira (real test-mode checkout verified) |
 | U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`, set to ORDER_RECEIVED on verified payment | `server/tests/payments.test.js` | 🚧 Received done; Kitchen/Delivery by admin in Modules 8/10 |
 | U12 | Real-time status on user dashboard       | 10                | -              | -    | ☐      |
 | A1  | Separate admin login                     | 8                 | -              | -    | ☐      |
@@ -39,7 +39,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 4  | Pizza dashboard                             | ✅ approved by Zaira (U5/U6 stay 🚧 until the Module 5 builder shows them) |
 | 5  | Custom pizza builder                        | ✅ approved by Zaira |
 | 6  | Order management                            | ✅ approved by Zaira (merged via PR #4) |
-| 7  | Razorpay payment                            | 🚧 built, mocked tests pass; awaiting your keys, browser check and "approved" |
+| 7  | Razorpay payment                            | ✅ approved by Zaira |
 | 8  | Admin authentication & authorization        | ☐ |
 | 9  | Inventory management                        | ☐ |
 | 10 | Low-stock automation + real-time tracking   | ☐ |

@@ -241,6 +241,15 @@ Automated: `cd server && npm test` runs 80 tests (62 earlier + 18 payments). **8
 | `stockDeducted` hidden from API responses (caught by the existing "no stock fields" test) | ✅ |
 | Client `npm run lint` (no warnings) and `npm run build` | ✅ |
 
+### Real test-mode check (Module 7) - done by Zaira
+
+| Check | Result |
+| ----- | ------ |
+| Razorpay popup opens in test mode | ✅ |
+| Closing the popup leaves the order retryable | ✅ |
+| Test payment succeeds; order detail shows "Payment successful" | ✅ |
+| My orders lists the order as Order Received | ✅ |
+
 ### Not yet verified (Module 7)
 
 - **A real Razorpay test-mode checkout.** Needs `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` in `server/.env`. The real Razorpay HTTP call (`POST /v1/orders`) and the real Checkout popup have not been exercised. Only the fake gateway and the signature algorithm (HMAC-SHA256 of `order_id|payment_id`, as Razorpay documents it) are tested.
