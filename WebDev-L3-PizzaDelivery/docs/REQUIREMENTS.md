@@ -21,13 +21,13 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | ✅ approved by Zaira (real test-mode checkout verified) |
 | U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`, set to ORDER_RECEIVED on verified payment | `server/tests/payments.test.js` | 🚧 Received done; Kitchen/Delivery by admin in Modules 8/10 |
 | U12 | Real-time status on user dashboard       | 10                | -              | -    | ☐      |
-| A1  | Separate admin login                     | 8                 | -              | -    | ☐      |
+| A1  | Separate admin login                     | 8                 | `POST /api/admin/login`, `requireAdmin` on `/api/admin`, `AdminLogin`, `AdminRoute` | `server/tests/admin.test.js` | 🚧 API tests pass; browser check pending |
 | A2  | Inventory dashboard                      | 9                 | -              | -    | ☐      |
 | A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | 🚧 implemented in Module 7; verify with the admin inventory view in Module 9 |
 | A4  | Manual stock update                      | 9                 | -              | -    | ☐      |
 | A5  | Configurable low-stock threshold         | 9, 10             | -              | -    | ☐      |
 | A6  | Scheduled low-stock email (node-cron)    | 10                | -              | -    | ☐      |
-| A7  | Admin order management                   | 8, 10             | -              | -    | ☐      |
+| A7  | Admin order management                   | 8, 10             | `GET /api/admin/orders`, `PATCH /api/admin/orders/:id/status` | `server/tests/admin.test.js` | 🚧 API done in Module 8; admin screen and live tracking in Module 10 |
 
 ## Module progress
 
@@ -40,7 +40,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 5  | Custom pizza builder                        | ✅ approved by Zaira |
 | 6  | Order management                            | ✅ approved by Zaira (merged via PR #4) |
 | 7  | Razorpay payment                            | ✅ approved by Zaira |
-| 8  | Admin authentication & authorization        | ☐ |
+| 8  | Admin authentication & authorization        | 🚧 built, tests pass; awaiting Zaira's browser check and "approved" |
 | 9  | Inventory management                        | ☐ |
 | 10 | Low-stock automation + real-time tracking   | ☐ |
 | 11 | Testing, UI polish & submission             | ☐ |
@@ -85,6 +85,15 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - Rare race (stock gone after payment): `paymentStatus: PAID`, no `orderStatus`, `needsRefund: true`, a clear message to the user; the refund is manual. Documented in the README.
 - The stock decrement lives in Module 7 (spec section 12); Module 9 adds the admin inventory UI, manual updates and alerts without changing verify.
 
+## Module 8 decisions (approved by Zaira)
+
+- One shared session token per browser profile. For the demo, admin runs in an incognito window and the customer in a normal one (documented in TESTING.md and DEMO-CHECKLIST.md).
+- `POST /api/admin/login` accepts only admins and gives customers the same generic 401 as a wrong password; it has its own stricter rate limit and ignores email verification. No admin registration exists.
+- Everything else under `/api/admin` sits behind `authenticateUser` + `requireAdmin` applied once at the router; a test crawls the router so a future unguarded route fails the suite.
+- Admin accounts are blocked (403) from the customer-only order and payment routes.
+- `GET /api/admin/orders`: confirmed orders only, newest first, capped at 200, with customer name and email. `PATCH /api/admin/orders/:id/status`: forward only, one step at a time; skips, backwards moves, repeats, unknown statuses and orders without a status (unpaid or `needsRefund`) are rejected. The admin orders screen and user live tracking are Module 10.
+- Admin password change: `npm run admin:reset-password` (reads `ADMIN_EMAIL` / `ADMIN_PASSWORD`, admin accounts only, invalidates older admin tokens). No email-based admin reset.
+
 ## TODO
 
 - [ ] **Module 11:** add a Razorpay webhook (`payment.captured`) as a safety net for browsers that close before verify, and a screen or report for `needsRefund` orders.
@@ -93,7 +102,6 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - [ ] Unpaid orders left behind (user abandons payment) are kept and hidden from history; decide on a cleanup or expiry (Module 11).
 - [ ] **After Module 3 is verified:** remove the temporary `AUTH_REQUIRE_VERIFIED` setting (or keep it hard-coded to `true`). It exists only so unverified users can log in during development; it is already ignored in production.
 - [ ] Restrict Atlas Network Access (currently `0.0.0.0/0`) before any deployment.
-- [ ] Module 8: separate `POST /api/admin/login`. `POST /api/auth/login` already rejects admin accounts.
 
 ## Module 2 decisions (approved by Zaira)
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from './authContext'
 import { getStoredToken, setUnauthorizedHandler, storeToken } from '../services/api'
-import { fetchCurrentUser, loginUser, registerUser } from '../services/authService'
+import { fetchCurrentUser, loginAdmin, loginUser, registerUser } from '../services/authService'
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -26,16 +26,19 @@ export default function AuthProvider({ children }) {
     }
   }, [logout])
 
-  const login = useCallback(async (credentials) => {
-    const { token, user: u } = await loginUser(credentials)
+  // One shared session: signing in as admin replaces a customer session in the same browser profile.
+  const signInWith = useCallback((request) => async (credentials) => {
+    const { token, user: u } = await request(credentials)
     storeToken(token)
     setUser(u)
     return u
   }, [])
+  const login = useMemo(() => signInWith(loginUser), [signInWith])
+  const adminLogin = useMemo(() => signInWith(loginAdmin), [signInWith])
 
   const value = useMemo(
-    () => ({ user, loading, isAuthenticated: Boolean(user), login, register: registerUser, logout }),
-    [user, loading, login, logout],
+    () => ({ user, loading, isAuthenticated: Boolean(user), isAdmin: user?.role === 'admin', login, adminLogin, register: registerUser, logout }),
+    [user, loading, login, adminLogin, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

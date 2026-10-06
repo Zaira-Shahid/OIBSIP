@@ -10,6 +10,11 @@ export async function loginUser({ email, password }) {
   return res.data.data
 }
 
+export async function loginAdmin({ email, password }) {
+  const res = await api.post('/admin/login', { email, password })
+  return res.data.data
+}
+
 export async function fetchCurrentUser() {
   const res = await api.get('/auth/me')
   return res.data.data.user

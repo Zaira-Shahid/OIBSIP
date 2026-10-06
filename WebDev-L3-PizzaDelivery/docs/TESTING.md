@@ -264,3 +264,42 @@ Automated: `cd server && npm test` runs 80 tests (62 earlier + 18 payments). **8
 4. Pay with the test card `4111 1111 1111 1111` (any future expiry, any CVV). You land on the order detail with "Payment successful", and **My orders** lists it as Order Received.
 5. In MongoDB (or later the admin view), each ingredient of that pizza has dropped by the quantity, and the order has `paymentStatus: PAID` and `orderStatus: ORDER_RECEIVED`.
 6. Try a failing test payment (Razorpay's test-mode failure option) and confirm you can retry.
+
+## Module 8 - Admin authentication (branch `module-8-admin-auth`)
+
+Automated: `cd server && npm test` runs 96 tests (80 earlier + 16 admin). **96 of 96 pass.**
+
+| Check | Result |
+| ----- | ------ |
+| Admin login works (even for an account that is not email-verified); no secrets in the response | ✅ |
+| Customer with correct credentials, wrong password and unknown email get identical 401 responses | ✅ |
+| Admin login rejects extra fields; no admin registration route; `role` is rejected on public register | ✅ |
+| Router crawl: every route on `/api/admin` except login gives 401 with no or a bad token and 403 for a customer | ✅ |
+| Role is re-read from the database: a demoted admin gets 403, a deleted admin 401 | ✅ |
+| Admin tokens get 403 on customer-only order and payment routes; customers unaffected | ✅ |
+| Admin and customer tokens work at the same time without interfering | ✅ |
+| `GET /api/admin/orders`: confirmed only (unpaid and needsRefund excluded), newest first, customer name and email, no internals, deleted customer tolerated | ✅ |
+| Status: RECEIVED → IN_KITCHEN → SENT_TO_DELIVERY works and the customer sees it | ✅ |
+| Skips, backwards moves, repeats and moves after delivery rejected (409) and nothing changes | ✅ |
+| Unknown, lowercase, empty, non-string, missing or extra status input rejected (400) | ✅ |
+| Orders without a status: 409 `ORDER_NOT_CONFIRMED`; unknown or malformed id 404 | ✅ |
+| Customers cannot change a status, even their own order (403); no token 401 | ✅ |
+| Four simultaneous status updates: exactly one wins | ✅ |
+| `npm run admin:reset-password`: updates only that admin; the old password and old token stop working, the new ones work; refuses a customer account, a missing account, a weak password and empty config | ✅ |
+| Client `npm run lint` (no warnings) and `npm run build` | ✅ |
+
+### Not yet verified (Module 8)
+
+- **The admin pages in a browser** (Staff login link, login, dashboard shell, admin navbar, redirects for customers and admins). They compile and lint but have not been clicked through.
+- **The incognito demo setup** (admin in an incognito window, customer in a normal window). Covered at API level by the "same time" test; not tried with two real windows.
+- The running dev API server needs a restart to serve `/api/admin`.
+
+### How to check Module 8 yourself
+
+1. Restart the API server. Make sure `ADMIN_EMAIL` / `ADMIN_PASSWORD` are set and run `npm run seed:admin` if the admin does not exist.
+2. Footer **Staff login** → `/admin/login`. A customer's email and password there must fail with "Invalid email or password." The admin's must open the admin dashboard.
+3. As a customer, type `/admin/dashboard`: you land on the staff login. As admin, type `/dashboard`: you land on the admin dashboard, and the navbar shows no customer links.
+4. **Two windows:** log in as a customer in a normal window and as admin in an **incognito** window. Both stay logged in independently, and logging out in one does not log out the other. (In the *same* window the second login replaces the first.)
+5. Optional: put a new `ADMIN_PASSWORD` in `.env`, run `cd server && npm run admin:reset-password`, and confirm the old password fails and the admin session in the browser is signed out.
+
+See also [DEMO-CHECKLIST.md](DEMO-CHECKLIST.md).

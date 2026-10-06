@@ -2,6 +2,9 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AuthProvider from './context/AuthProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 import MainLayout from './layouts/MainLayout'
+import AdminDashboard from './pages/AdminDashboard'
+import AdminLogin from './pages/AdminLogin'
+import AdminRoute from './components/AdminRoute'
 import Builder from './pages/Builder'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
@@ -33,6 +36,10 @@ export default function App() {
               <Route path="order-summary" element={<OrderSummary />} />
               <Route path="orders" element={<Orders />} />
               <Route path="orders/:id" element={<OrderDetail />} />
+            </Route>
+            <Route path="admin/login" element={<AdminLogin />} />
+            <Route element={<AdminRoute />}>
+              <Route path="admin/dashboard" element={<AdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>

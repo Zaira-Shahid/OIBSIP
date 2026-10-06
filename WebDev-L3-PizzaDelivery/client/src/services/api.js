@@ -39,7 +39,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const url = error.config?.url || ''
-    const isAuthAttempt = url.startsWith('/auth/login') || url.startsWith('/auth/register')
+    // A wrong password here must not log out whoever is already signed in.
+    const isAuthAttempt = ['/auth/login', '/auth/register', '/admin/login'].some((p) => url.startsWith(p))
     if (error.response?.status === 401 && !isAuthAttempt && getStoredToken()) onUnauthorized?.()
     return Promise.reject(error)
   },

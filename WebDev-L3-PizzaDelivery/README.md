@@ -76,6 +76,17 @@ cd server && npm run seed:admin
 ```
 It is safe to run again: an existing admin is never duplicated or overwritten. There is no public "register as admin" route.
 
+Staff sign in at `/admin/login` (linked as "Staff login" in the footer), which calls `POST /api/admin/login`. Customers cannot use it and admins cannot use the customer login. Everything under `/api/admin` (except that login) requires a valid admin token, checked against the database on every request.
+
+### Change the admin password
+`seed:admin` never overwrites a password, so use the separate script. Put the admin's email in `ADMIN_EMAIL` and the **new** password in `ADMIN_PASSWORD` in `server/.env`, then:
+```bash
+cd server && npm run admin:reset-password
+```
+It updates only that account, applies the normal password rule (8-72 characters, a letter and a number), refuses an email that is not an admin account, and signs out every admin session issued before the change. There is no email-based admin reset by design. Remove the new password from `.env` afterwards if you do not want it stored there.
+
+### Admin and customer at the same time
+The browser keeps one login per browser profile, so signing in as admin replaces a customer session in the same window. To use both at once (for example in the demo), open the admin in a **private/incognito window** and the customer in a normal window; they do not share storage.
 
 
 ### Run

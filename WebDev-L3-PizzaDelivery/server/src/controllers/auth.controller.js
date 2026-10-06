@@ -7,14 +7,13 @@ const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/e
 const { env } = require('../config/env');
 const User = require('../models/User');
 
-const BCRYPT_ROUNDS = 12;
+const { BCRYPT_ROUNDS, DUMMY_HASH } = require('../utils/passwords');
+
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 60 * 60 * 1000;
 const INVALID_LOGIN = 'Invalid email or password.';
 const DUPLICATE_EMAIL = 'An account with this email already exists.';
 const INVALID_LINK = 'This link is invalid, has expired, or was already used.';
-// Compared against when the account does not exist, so response time does not reveal it.
-const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', BCRYPT_ROUNDS);
 
 // Never log tokens or links; only the failure reason.
 const logEmailFailure = (kind, err) => console.error(`${kind} email failed: ${err.message}`);
