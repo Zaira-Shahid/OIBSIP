@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-
-const formatPrice = (price) => `₹${price.toLocaleString('en-IN')}`
+import { formatPrice } from '../utils/format'
 
 export default function PizzaCard({ pizza }) {
   const [imageFailed, setImageFailed] = useState(false)
@@ -26,7 +25,6 @@ export default function PizzaCard({ pizza }) {
         <p className="pizza-card__desc">{pizza.description}</p>
         <div className="pizza-card__footer">
           <span className="pizza-card__price">{formatPrice(pizza.price)}</span>
-          {/* The builder arrives in Module 5; the route is wired then. */}
           <Link className="btn" to="/builder" state={{ pizzaId: pizza.id }} aria-label={`Customize ${pizza.name}`}>
             Customize
           </Link>
