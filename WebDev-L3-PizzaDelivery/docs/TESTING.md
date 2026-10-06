@@ -288,11 +288,19 @@ Automated: `cd server && npm test` runs 96 tests (80 earlier + 16 admin). **96 o
 | `npm run admin:reset-password`: updates only that admin; the old password and old token stop working, the new ones work; refuses a customer account, a missing account, a weak password and empty config | ✅ |
 | Client `npm run lint` (no warnings) and `npm run build` | ✅ |
 
-### Not yet verified (Module 8)
+### Browser check (Module 8) - done by Zaira
 
-- **The admin pages in a browser** (Staff login link, login, dashboard shell, admin navbar, redirects for customers and admins). They compile and lint but have not been clicked through.
-- **The incognito demo setup** (admin in an incognito window, customer in a normal window). Covered at API level by the "same time" test; not tried with two real windows.
-- The running dev API server needs a restart to serve `/api/admin`.
+| Check | Result |
+| ----- | ------ |
+| "Staff login" link in the footer | ✅ |
+| A customer opening `/admin/dashboard` is redirected away | ✅ |
+| Admin login page has no register option | ✅ |
+| Customer credentials are rejected on the admin login | ✅ |
+| Admin login works in an Incognito window | ✅ |
+| Admin navbar shows only admin links | ✅ |
+| The customer session in the normal window stays logged in at the same time | ✅ |
+
+Not exercised in a browser: `npm run admin:reset-password` (covered by automated tests only), and the admin navbar/redirect when an admin types a customer URL.
 
 ### How to check Module 8 yourself
 
