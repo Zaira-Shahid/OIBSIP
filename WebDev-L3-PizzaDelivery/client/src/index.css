@@ -1,0 +1,50 @@
+:root {
+  --c-primary: #c0392b;
+  --c-primary-dark: #a52f23;
+  --c-accent: #f4b942;
+  --c-bg: #fffaf3;
+  --c-surface: #ffffff;
+  --c-text: #2b2118;
+  --c-muted: #6b5d50;
+  --c-border: #eadfce;
+  --c-ok: #1e7e45;
+  --c-warn: #b7791f;
+  --c-err: #b42318;
+  --radius: 12px;
+  --maxw: 1100px;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--c-text);
+  background: var(--c-bg);
+  line-height: 1.5;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+h1, h2, h3 { line-height: 1.2; }
+a { color: var(--c-primary); }
+:focus-visible { outline: 3px solid var(--c-accent); outline-offset: 2px; }
+
+.container { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.main { flex: 1; padding-top: 32px; padding-bottom: 32px; }
+
+.navbar { background: var(--c-surface); border-bottom: 1px solid var(--c-border); position: sticky; top: 0; z-index: 10; }
+.navbar__inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.brand { font-weight: 800; font-size: 1.25rem; text-decoration: none; color: var(--c-primary); }
+.nav-link { text-decoration: none; color: var(--c-muted); font-weight: 600; padding: 8px 12px; border-radius: 8px; }
+.nav-link.active, .nav-link:hover { color: var(--c-primary); background: #fdf0ec; }
+
+.footer { border-top: 1px solid var(--c-border); padding: 16px 0; color: var(--c-muted); font-size: 0.875rem; text-align: center; }
+
+.hero { text-align: center; padding: 48px 0; }
+.hero h1 { font-size: clamp(2rem, 6vw, 3.25rem); margin: 0 0 12px; }
+.lead { color: var(--c-muted); font-size: 1.125rem; margin: 0 0 24px; }
+
+.btn { display: inline-block; background: var(--c-primary); color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 700; border: 0; cursor: pointer; }
+.btn:hover { background: var(--c-primary-dark); }
+
+.status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--c-surface); border: 1px solid var(--c-border); font-size: 0.9rem; }
+.status__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c-muted); }
+.status--ok .status__dot { background: var(--c-ok); }
+.status--degraded .status__dot { background: var(--c-warn); }
+.status--offline .status__dot { background: var(--c-err); }
