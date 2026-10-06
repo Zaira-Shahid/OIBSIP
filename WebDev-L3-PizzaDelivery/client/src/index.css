@@ -48,3 +48,24 @@ a { color: var(--c-primary); }
 .status--ok .status__dot { background: var(--c-ok); }
 .status--degraded .status__dot { background: var(--c-warn); }
 .status--offline .status__dot { background: var(--c-err); }
+
+.nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.nav-user { color: var(--c-muted); font-size: 0.9rem; padding: 0 4px; }
+.btn--ghost { background: transparent; color: var(--c-primary); border: 1px solid var(--c-primary); }
+.btn--ghost:hover { background: #fdf0ec; }
+.btn--block { display: block; width: 100%; margin-top: 8px; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius); padding: 24px; }
+.auth-card { max-width: 440px; margin: 16px auto; }
+.auth-card h1 { margin-top: 0; font-size: 1.6rem; }
+.auth-card__alt { text-align: center; margin: 16px 0 0; color: var(--c-muted); }
+.center-note { text-align: center; color: var(--c-muted); padding: 48px 0; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-weight: 600; margin-bottom: 4px; }
+.field input { width: 100%; padding: 10px 12px; border: 1px solid var(--c-border); border-radius: 8px; font: inherit; background: #fff; color: var(--c-text); }
+.field input[aria-invalid='true'] { border-color: var(--c-err); }
+.field__hint { margin: 4px 0 0; font-size: 0.8rem; color: var(--c-muted); }
+.field__error, .form-error { margin: 4px 0 0; font-size: 0.875rem; color: var(--c-err); }
+.form-error { padding: 10px 12px; background: #fdecea; border-radius: 8px; margin-bottom: 8px; }

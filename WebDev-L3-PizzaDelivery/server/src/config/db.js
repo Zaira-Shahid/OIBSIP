@@ -2,7 +2,11 @@ const dns = require('dns');
 const mongoose = require('mongoose');
 const { env } = require('./env');
 
-const connectOptions = { serverSelectionTimeoutMS: 10000 };
+// Automated tests use a separate database so they never touch real data.
+const connectOptions = {
+  serverSelectionTimeoutMS: 10000,
+  ...(env.nodeEnv === 'test' && { dbName: 'pizza-delivery-test' }),
+};
 
 async function connectDB() {
   try {

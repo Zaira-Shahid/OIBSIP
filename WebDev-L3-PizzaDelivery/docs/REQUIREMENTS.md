@@ -9,8 +9,8 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 
 | ID  | Requirement                              | Module            | Implementation | Test | Status |
 | --- | ---------------------------------------- | ----------------- | -------------- | ---- | ------ |
-| U1  | User registration + email verification   | 2, 3              | -              | -    | ☐      |
-| U2  | JWT login                                | 2                 | -              | -    | ☐      |
+| U1  | User registration + email verification   | 2, 3              | Registration: `auth.controller`, Register page | `server/tests/auth.test.js` | 🚧 registration done; verification email in Module 3 |
+| U2  | JWT login                                | 2                 | `auth.controller`, `authenticateUser`, Login page | `server/tests/auth.test.js` | 🚧 works; stays 🚧 until Module 3 makes verified-only login real |
 | U3  | Forgot password + email reset link       | 3                 | -              | -    | ☐      |
 | U4  | Pizza dashboard                          | 4                 | -              | -    | ☐      |
 | U5  | At least 5 pizza bases                   | 4, 5              | -              | -    | ☐      |
@@ -34,7 +34,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | #  | Module                                      | Status |
 | -- | ------------------------------------------- | ------ |
 | 1  | Project foundation & architecture           | ✅ |
-| 2  | User authentication                         | ☐ |
+| 2  | User authentication                         | ✅ approved by Zaira (U1/U2 stay 🚧 until Module 3) |
 | 3  | Email verification & password recovery      | ☐ |
 | 4  | Pizza dashboard                             | ☐ |
 | 5  | Custom pizza builder                        | ☐ |
@@ -61,3 +61,16 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - Stock availability is checked **before** creating the Razorpay order; the final atomic decrement happens at payment verification with the condition `stock >= required quantity`.
 - `paymentStatus` and `orderStatus` are separate fields. An unpaid order has `paymentStatus = PENDING` and **no** `ORDER_RECEIVED` status; `orderStatus` becomes `ORDER_RECEIVED` only after successful signature verification. Unpaid orders never appear in the user's order tracking.
 - Seed data ships with 5 bases and 5 sauces.
+
+## TODO
+
+- [ ] **After Module 3 is verified:** remove the temporary `AUTH_REQUIRE_VERIFIED` setting (or keep it hard-coded to `true`). It exists only so unverified users can log in during development; it is already ignored in production.
+- [ ] Restrict Atlas Network Access (currently `0.0.0.0/0`) before any deployment.
+- [ ] Module 8: separate `POST /api/admin/login`. `POST /api/auth/login` already rejects admin accounts.
+
+## Module 2 decisions (approved by Zaira)
+
+- JWT is stored in `localStorage` and sent as a Bearer token (1 day expiry).
+- Password rule, identical on client and server: 8-72 characters, at least one letter and one number.
+- Public registration always creates `role: "user"`; a `role` field in the request is rejected.
+- Admin accounts exist only via `npm run seed:admin` (idempotent, never overwrites a password).
