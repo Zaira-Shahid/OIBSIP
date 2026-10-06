@@ -76,6 +76,8 @@ cd server && npm run seed:admin
 ```
 It is safe to run again: an existing admin is never duplicated or overwritten. There is no public "register as admin" route.
 
+
+
 ### Run
 ```bash
 # terminal 1

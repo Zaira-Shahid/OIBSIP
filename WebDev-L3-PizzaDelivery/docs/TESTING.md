@@ -113,3 +113,34 @@ Automated: `cd server && npm test` now runs 29 tests (14 auth + 15 email flows).
 2. Register a new account: expect the "We sent a verification link" screen and an email. Logging in before clicking the link shows the 403 message and a "Resend verification email" button.
 3. Click the link: "Your email has been verified". Reload the same link: "invalid, expired or already used". Log in.
 4. Log out, "Forgot your password?", enter the email, open the emailed link, set a new password, log in with it. The old password must fail.
+
+## Module 4 - Pizza dashboard (branch `module-4-pizza-dashboard`)
+
+Automated: `cd server && npm test` now runs 38 tests (14 auth + 15 email flows + 9 menu). **38 of 38 pass.** Menu tests use the `pizza-delivery-test` database.
+
+| Check | Result |
+| ----- | ------ |
+| Seed data: 5 bases, 5 sauces, 4 cheeses, 7 vegetables, 6 pizzas | ✅ |
+| `seed:menu` run twice adds nothing the second time | ✅ (dev DB and test) |
+| Re-seeding does not overwrite edited stock/price (InventoryItem) or price (Pizza) | ✅ |
+| `GET /api/pizzas` returns available pizzas only, with id/name/description/image/price | ✅ |
+| `GET /api/pizzas/:id`: found, unknown id 404, malformed id 404, unavailable 404 | ✅ |
+| `GET /api/ingredients` grouped by category, no stock/threshold fields | ✅ |
+| Ingredient `available` follows stock; inactive items excluded | ✅ |
+| Endpoints are public | ✅ |
+| Live dev server returns the seeded data over HTTP | ✅ |
+| All 6 Unsplash image URLs return 200 `image/jpeg` and show pizzas | ✅ (viewed) |
+| Client `npm run lint` and `npm run build` | ✅ |
+
+### Browser check (Module 4) - done by Zaira
+
+| Check | Result |
+| ----- | ------ |
+| 6 pizzas shown with images | ✅ |
+| Prices shown in ₹ | ✅ |
+| "Customize" opens the builder placeholder | ✅ |
+| Mobile layout works | ✅ |
+
+Not exercised in a browser: the loading skeleton, empty state, error + "Try again" and broken-image fallback (code is in place; none were triggered).
+
+The "Customize" button goes to a placeholder `/builder` page until Module 5. U5/U6 stay 🚧 until the builder displays the bases and sauces.
