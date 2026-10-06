@@ -132,7 +132,15 @@ Automated: `cd server && npm test` now runs 38 tests (14 auth + 15 email flows +
 | All 6 Unsplash image URLs return 200 `image/jpeg` and show pizzas | ✅ (viewed) |
 | Client `npm run lint` and `npm run build` | ✅ |
 
-### Not yet verified (Module 4)
+### Browser check (Module 4) - done by Zaira
 
-- **The dashboard in a browser** (grid layout at phone/tablet/desktop widths, loading skeleton, empty state, error + "Try again", broken-image fallback). It compiles and the API it calls is verified, but it has not been viewed in a browser.
-- The "Customize" button goes to a placeholder `/builder` page until Module 5.
+| Check | Result |
+| ----- | ------ |
+| 6 pizzas shown with images | ✅ |
+| Prices shown in ₹ | ✅ |
+| "Customize" opens the builder placeholder | ✅ |
+| Mobile layout works | ✅ |
+
+Not exercised in a browser: the loading skeleton, empty state, error + "Try again" and broken-image fallback (code is in place; none were triggered).
+
+The "Customize" button goes to a placeholder `/builder` page until Module 5. U5/U6 stay 🚧 until the builder displays the bases and sauces.

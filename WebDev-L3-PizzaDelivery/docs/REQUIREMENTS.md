@@ -12,7 +12,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U1  | User registration + email verification   | 2, 3              | Registration: `auth.controller`, Register page | `server/tests/auth.test.js` | 🚧 registration done; verification email in Module 3 |
 | U2  | JWT login                                | 2                 | `auth.controller`, `authenticateUser`, Login page | `server/tests/auth.test.js` | 🚧 works; stays 🚧 until Module 3 makes verified-only login real |
 | U3  | Forgot password + email reset link       | 3                 | `forgotPassword`/`resetPassword`, `emailService`, ForgotPassword/ResetPassword pages | `server/tests/email-flows.test.js` | 🚧 API + tests pass; real inbox + browser check pending |
-| U4  | Pizza dashboard                          | 4                 | `Dashboard`, `PizzaCard`, `pizza.controller` | `server/tests/menu.test.js` | 🚧 API tests pass; browser check pending |
+| U4  | Pizza dashboard                          | 4                 | `Dashboard`, `PizzaCard`, `pizza.controller` | `server/tests/menu.test.js` | ✅ API tests pass; browser check done by Zaira |
 | U5  | At least 5 pizza bases                   | 4, 5              | `InventoryItem` (category `base`), `seed:menu`, `GET /api/ingredients` | `server/tests/menu.test.js` | 🚧 data + API done; builder UI in Module 5 |
 | U6  | At least 5 sauces                        | 4, 5              | `InventoryItem` (category `sauce`), `seed:menu`, `GET /api/ingredients` | `server/tests/menu.test.js` | 🚧 data + API done; builder UI in Module 5 |
 | U7  | Cheese selection                         | 5                 | -              | -    | ☐      |
@@ -36,7 +36,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 1  | Project foundation & architecture           | ✅ |
 | 2  | User authentication                         | ✅ approved by Zaira (U1/U2 stay 🚧 until Module 3) |
 | 3  | Email verification & password recovery      | ✅ approved by Zaira (real-inbox check not run by Claude; U1–U3 stay 🚧 until that is done) |
-| 4  | Pizza dashboard                             | 🚧 branch `module-4-pizza-dashboard`, awaiting approval |
+| 4  | Pizza dashboard                             | ✅ approved by Zaira (U5/U6 stay 🚧 until the Module 5 builder shows them) |
 | 5  | Custom pizza builder                        | ☐ |
 | 6  | Order management                            | ☐ |
 | 7  | Razorpay payment                            | ☐ |
