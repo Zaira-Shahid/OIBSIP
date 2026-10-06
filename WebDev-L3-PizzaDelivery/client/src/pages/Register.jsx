@@ -41,10 +41,11 @@ export default function Register() {
       <section className="card auth-card">
         <h1>Account created</h1>
         <p role="status">
-          {result.requiresVerification
-            ? 'Your account is ready. Email verification is being added next, so you will be able to log in once your email is verified.'
-            : 'Your account is ready. You can log in now.'}
+          {result.emailSent
+            ? `We sent a verification link to ${result.user.email}. Open it to activate your account (the link is valid for 24 hours).`
+            : 'Your account was created, but we could not send the verification email. Go to log in and choose "Resend verification email".'}
         </p>
+        {!result.requiresVerification && <p>Email verification is switched off in this environment, so you can already log in.</p>}
         <Link className="btn" to="/login">Go to log in</Link>
       </section>
     )

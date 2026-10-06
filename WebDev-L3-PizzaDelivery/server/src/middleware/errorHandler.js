@@ -27,7 +27,9 @@ function errorHandler(err, req, res, next) {
 
   if (status >= 500) console.error(`[${req.method} ${req.originalUrl}]`, env.nodeEnv === 'production' ? err.message : err);
 
-  res.status(status).json({ success: false, message });
+  const body = { success: false, message };
+  if (err.isOperational && typeof err.code === 'string') body.code = err.code;
+  res.status(status).json(body);
 }
 
 module.exports = { notFound, errorHandler };

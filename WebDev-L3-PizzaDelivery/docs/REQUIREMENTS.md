@@ -11,7 +11,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | --- | ---------------------------------------- | ----------------- | -------------- | ---- | ------ |
 | U1  | User registration + email verification   | 2, 3              | Registration: `auth.controller`, Register page | `server/tests/auth.test.js` | 🚧 registration done; verification email in Module 3 |
 | U2  | JWT login                                | 2                 | `auth.controller`, `authenticateUser`, Login page | `server/tests/auth.test.js` | 🚧 works; stays 🚧 until Module 3 makes verified-only login real |
-| U3  | Forgot password + email reset link       | 3                 | -              | -    | ☐      |
+| U3  | Forgot password + email reset link       | 3                 | `forgotPassword`/`resetPassword`, `emailService`, ForgotPassword/ResetPassword pages | `server/tests/email-flows.test.js` | 🚧 API + tests pass; real inbox + browser check pending |
 | U4  | Pizza dashboard                          | 4                 | -              | -    | ☐      |
 | U5  | At least 5 pizza bases                   | 4, 5              | -              | -    | ☐      |
 | U6  | At least 5 sauces                        | 4, 5              | -              | -    | ☐      |
@@ -35,7 +35,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | -- | ------------------------------------------- | ------ |
 | 1  | Project foundation & architecture           | ✅ |
 | 2  | User authentication                         | ✅ approved by Zaira (U1/U2 stay 🚧 until Module 3) |
-| 3  | Email verification & password recovery      | ☐ |
+| 3  | Email verification & password recovery      | 🚧 branch `module-3-email-verification`, awaiting real-email + browser check |
 | 4  | Pizza dashboard                             | ☐ |
 | 5  | Custom pizza builder                        | ☐ |
 | 6  | Order management                            | ☐ |

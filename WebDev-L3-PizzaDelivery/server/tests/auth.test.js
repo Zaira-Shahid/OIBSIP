@@ -14,6 +14,7 @@ const { env, assertEnv } = require('../src/config/env');
 const { connectDB } = require('../src/config/db');
 const { authenticateUser, requireAdmin } = require('../src/middleware/auth');
 const { errorHandler } = require('../src/middleware/errorHandler');
+const { setTransport } = require('../src/services/emailService');
 const app = require('../src/app');
 const User = require('../src/models/User');
 
@@ -43,6 +44,8 @@ const register = (email, extra = {}) =>
 
 test.before(async () => {
   assertEnv();
+  env.requireVerified = true; // pin the default regardless of the developer .env
+  setTransport({ sendMail: async () => {} });
   await connectDB();
   await cleanup();
   server = app.listen(0);

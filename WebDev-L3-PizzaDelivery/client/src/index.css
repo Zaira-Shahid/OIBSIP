@@ -69,3 +69,5 @@ a { color: var(--c-primary); }
 .field__hint { margin: 4px 0 0; font-size: 0.8rem; color: var(--c-muted); }
 .field__error, .form-error { margin: 4px 0 0; font-size: 0.875rem; color: var(--c-err); }
 .form-error { padding: 10px 12px; background: #fdecea; border-radius: 8px; margin-bottom: 8px; }
+.notice { margin: 0 0 12px; }
+.notice p { margin: 8px 0 0; font-size: 0.9rem; }
