@@ -144,3 +144,32 @@ Automated: `cd server && npm test` now runs 38 tests (14 auth + 15 email flows +
 Not exercised in a browser: the loading skeleton, empty state, error + "Try again" and broken-image fallback (code is in place; none were triggered).
 
 The "Customize" button goes to a placeholder `/builder` page until Module 5. U5/U6 stay 🚧 until the builder displays the bases and sauces.
+
+## Module 5 - Custom pizza builder (branch `module-5-pizza-builder`)
+
+Automated: `cd server && npm test` now runs 49 tests (14 auth + 15 email flows + 9 menu + 11 builder). **49 of 49 pass.** The script runs files one at a time (`--test-concurrency=1`) because menu and builder tests share the `pizza-delivery-test` database.
+
+| Check | Result |
+| ----- | ------ |
+| Price = base + sauce + cheese + vegetables from database prices | ✅ |
+| Vegetables optional (omitted or empty) | ✅ |
+| A database price change changes the quoted total | ✅ |
+| Client-sent `total` / `price` / `prices` rejected (400) | ✅ |
+| Missing base, sauce or cheese rejected; an array in place of one choice rejected | ✅ |
+| Wrong-category ingredient, malformed id, unknown id, duplicate id, non-array vegetables, bad JSON rejected | ✅ |
+| Out-of-stock ingredient: 409 `OUT_OF_STOCK`; inactive ingredient: 400 | ✅ |
+| Response has no stock fields | ✅ |
+| `priceCustomPizza` service enforces the same rules (reused by order creation) | ✅ |
+| Client `npm run lint` (no warnings) and `npm run build` | ✅ |
+
+### Not yet verified (Module 5)
+
+- **The builder in a browser.** Compiled and linted only; no click-through done. The running dev API server predates the new route (`POST /api/pizzas/price` returned 404 on it), so it needs a restart before the review step works.
+- Preset pre-selection from the dashboard (not built).
+
+### How to check Module 5 yourself
+
+1. Restart the API server, log in, click **Customize** on any pizza.
+2. Step 1-2: Next with nothing chosen shows an error; choose a base and a sauce. Step 3: only one cheese can be selected. Step 4: select several vegetables, or none.
+3. Back keeps every selection. The stepper shows the current and completed steps. On the review step the total is confirmed by the server and each "Change" link returns to its step.
+4. Check with the keyboard (Tab, arrow keys, Space) and at phone width.

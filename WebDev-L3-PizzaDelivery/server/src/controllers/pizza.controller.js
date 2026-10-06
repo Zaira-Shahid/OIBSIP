@@ -3,6 +3,7 @@ const Pizza = require('../models/Pizza');
 const InventoryItem = require('../models/InventoryItem');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
+const { priceCustomPizza } = require('../services/pricingService');
 
 const { CATEGORIES } = InventoryItem;
 
@@ -17,6 +18,12 @@ exports.getPizza = asyncHandler(async (req, res) => {
     : null;
   if (!pizza) throw new ApiError(404, 'Pizza not found.');
   res.json({ success: true, data: { pizza } });
+});
+
+// Server-side price for a custom pizza. Nothing is stored; the client total is only ever a preview.
+exports.priceCustomPizza = asyncHandler(async (req, res) => {
+  const { items, total } = await priceCustomPizza(req.body);
+  res.json({ success: true, data: { items, total } });
 });
 
 // Active builder ingredients grouped by category. Customers only see availability, never stock numbers.
