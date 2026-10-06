@@ -19,15 +19,15 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U8  | Multiple vegetable selection             | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U9  | Order summary                            | 6                 | `OrderSummary`, `PizzaBreakdown`, `POST /api/orders` | `server/tests/orders.test.js` | ✅ API tests pass; browser check done by Zaira |
 | U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | ✅ approved by Zaira (real test-mode checkout verified) |
-| U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`, set to ORDER_RECEIVED on verified payment | `server/tests/payments.test.js` | 🚧 Received done; Kitchen/Delivery by admin in Modules 8/10 |
-| U12 | Real-time status on user dashboard       | 10                | -              | -    | ☐      |
+| U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`; ORDER_RECEIVED on verified payment, then forward-only admin updates (`AdminOrders`) | `server/tests/payments.test.js`, `admin.test.js`, `tracking.test.js` | 🚧 tests pass; browser check pending |
+| U12 | Real-time status on user dashboard       | 10                | `usePolling` (5 s), `Orders`, `OrderDetail`, `OrderTracker` | `server/tests/tracking.test.js` (API side) | 🚧 API tests pass; browser check pending |
 | A1  | Separate admin login                     | 8                 | `POST /api/admin/login`, `requireAdmin` on `/api/admin`, `AdminLogin`, `AdminRoute` | `server/tests/admin.test.js` | ✅ approved by Zaira |
 | A2  | Inventory dashboard                      | 9                 | `GET /api/admin/inventory`, `AdminInventory`, `InventoryRow` | `server/tests/inventory.test.js` | ✅ approved by Zaira |
 | A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | ✅ implemented in Module 7; verified end to end in the browser by Zaira (a paid order lowered stock by the ordered quantity) |
 | A4  | Manual stock update                      | 9                 | `PATCH /api/admin/inventory/:id`, `InventoryRow` | `server/tests/inventory.test.js` | ✅ approved by Zaira |
-| A5  | Configurable low-stock threshold         | 9, 10             | Per-item `lowStockThreshold` editable in `PATCH /api/admin/inventory/:id`; `inventoryStatus` rule | `server/tests/inventory.test.js` | 🚧 threshold configurable (Module 9); scheduled email in Module 10 |
-| A6  | Scheduled low-stock email (node-cron)    | 10                | -              | -    | ☐      |
-| A7  | Admin order management                   | 8, 10             | `GET /api/admin/orders`, `PATCH /api/admin/orders/:id/status` | `server/tests/admin.test.js` | 🚧 API done in Module 8; admin screen and live tracking in Module 10 |
+| A5  | Configurable low-stock threshold         | 9, 10             | Per-item `lowStockThreshold` editable in `PATCH /api/admin/inventory/:id`; `inventoryStatus` rule | `server/tests/inventory.test.js` | 🚧 per-item threshold (Module 9) and alert state/reset (Module 10); browser/email check pending |
+| A6  | Scheduled low-stock email (node-cron)    | 10                | `lowStockService` (`runLowStockCheck`, `startLowStockScheduler`), `sendLowStockDigest`, `POST /api/admin/inventory/check-low-stock` | `server/tests/lowstock.test.js` | 🚧 fake-mail tests pass; real email and cron run pending |
+| A7  | Admin order management                   | 8, 10             | `GET /api/admin/orders`, `PATCH /api/admin/orders/:id/status`, `AdminOrders` | `server/tests/admin.test.js`, `tracking.test.js` | 🚧 API done in Module 8; screen built in Module 10, browser check pending |
 
 ## Module progress
 
@@ -42,7 +42,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 7  | Razorpay payment                            | ✅ approved by Zaira |
 | 8  | Admin authentication & authorization        | ✅ approved by Zaira |
 | 9  | Inventory management                        | ✅ approved by Zaira |
-| 10 | Low-stock automation + real-time tracking   | ☐ |
+| 10 | Low-stock automation + real-time tracking   | 🚧 built, tests pass; awaiting Zaira's browser/email check and "approved" |
 | 11 | Testing, UI polish & submission             | ☐ |
 
 ### Module 1 foundation checklist (spec Phase 1)
@@ -102,9 +102,18 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - No audit trail; `updatedAt` is the only record of a change.
 - Dashboard overview shows low and out-of-stock counts. Orders overview and live statuses are Module 10.
 
+## Module 10 decisions (approved by Zaira)
+
+- Scheduler: `node-cron`, expression from `LOW_STOCK_CHECK_CRON` (default every 15 minutes; `*/1 * * * *` for the demo video); an invalid value falls back to the default with a warning. It never starts under `NODE_ENV=test`. Each run logs one short line (items checked, alerts sent) with no addresses or secrets.
+- One digest email per run lists every newly low item (name, category, stock, threshold, status). Recipient: `ADMIN_ALERT_EMAIL`, falling back to `ADMIN_EMAIL`.
+- Alert state per item (`lowStockAlertState`: LOW or OUT_OF_STOCK). An alert is sent only when an item gets worse than the state it was last alerted for: LOW -> OUT_OF_STOCK is a new alert, an unchanged state is never repeated. Restocking to `>=` the threshold clears the state immediately (inside the inventory update, not at the next run); OUT_OF_STOCK -> LOW lowers it to LOW without an email, so a later fall to 0 alerts again.
+- Items are claimed atomically before sending (overlapping runs and multiple instances cannot double-send); a failed send releases the claim so the next run retries. The shared `inventoryStatus` rule is used by the screen and the scheduler.
+- Demo helper: admin-only `POST /api/admin/inventory/check-low-stock` and a "Run low-stock check now" button on the inventory page; same job, same duplicate rules.
+- Real-time = polling (spec 5.1): 5 s for customers (My orders, Order details), 10 s for admin (orders, dashboard). Polling pauses when the tab is hidden, refreshes when it becomes visible, never overlaps, and stops on unmount. A failed poll keeps the last data and shows "Reconnecting".
+- Admin orders screen shows only the one legal next step as a button; the server still enforces it.
+
 ## TODO
 
-- [ ] **Module 10:** the low-stock scheduler needs per-item alert state (no duplicate emails). When an item is restocked to `>=` its threshold (status back to OK), its alert state must reset so a later drop triggers a new email. Reuse `inventoryStatus` from `server/src/services/inventoryService.js` so the screen and the scheduler agree.
 
 - [ ] **Module 11:** add a Razorpay webhook (`payment.captured`) as a safety net for browsers that close before verify, and a screen or report for `needsRefund` orders.
 

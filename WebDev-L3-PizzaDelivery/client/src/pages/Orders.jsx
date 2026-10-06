@@ -1,30 +1,47 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import usePolling from '../hooks/usePolling'
 import { getErrorMessage } from '../services/api'
 import { fetchOrders } from '../services/orderService'
 import { ORDER_STATUS_LABELS, formatDateTime, formatPrice } from '../utils/format'
 
-// Only paid, confirmed orders are listed; the server never returns unpaid ones.
-export default function Orders() {
-  const [state, setState] = useState({ status: 'loading', orders: [], error: '' })
-  const [attempt, setAttempt] = useState(0)
+const POLL_MS = 5000
 
-  useEffect(() => {
-    let cancelled = false
-    fetchOrders()
-      .then((orders) => !cancelled && setState({ status: 'ready', orders, error: '' }))
-      .catch((err) => !cancelled && setState({ status: 'error', orders: [], error: getErrorMessage(err) }))
-    return () => {
-      cancelled = true
+// Only paid, confirmed orders are listed; the server never returns unpaid ones.
+// Statuses refresh by themselves every few seconds while the tab is visible.
+export default function Orders() {
+  const [state, setState] = useState({ status: 'loading', orders: [], error: '', reconnecting: false })
+  const [announcement, setAnnouncement] = useState('')
+  const known = useRef(new Map()) // order id -> last seen status
+
+  const load = useCallback(async () => {
+    try {
+      const orders = await fetchOrders()
+      const changed = orders.find((o) => known.current.has(o.id) && known.current.get(o.id) !== o.orderStatus)
+      if (changed) setAnnouncement(`An order is now: ${ORDER_STATUS_LABELS[changed.orderStatus]}.`)
+      known.current = new Map(orders.map((o) => [o.id, o.orderStatus]))
+      setState({ status: 'ready', orders, error: '', reconnecting: false })
+    } catch (err) {
+      // Keep showing what we already have; only a first load that fails is an error screen.
+      setState((s) =>
+        s.status === 'ready'
+          ? { ...s, reconnecting: true }
+          : { status: 'error', orders: [], error: getErrorMessage(err), reconnecting: false },
+      )
     }
-  }, [attempt])
+  }, [])
+
+  const refresh = usePolling(load, POLL_MS)
 
   return (
     <section>
       <header className="page-head">
         <h1>My orders</h1>
-        <p className="lead">Confirmed orders and their progress.</p>
+        <p className="lead">Confirmed orders and their progress. This page updates by itself.</p>
       </header>
+
+      <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
+      {state.reconnecting && <p className="field__hint" role="status">Reconnecting… showing the last known status.</p>}
 
       {state.status === 'loading' && <p aria-busy="true">Loading your orders…</p>}
 
@@ -35,8 +52,8 @@ export default function Orders() {
             type="button"
             className="btn"
             onClick={() => {
-              setState({ status: 'loading', orders: [], error: '' })
-              setAttempt((n) => n + 1)
+              setState({ status: 'loading', orders: [], error: '', reconnecting: false })
+              refresh()
             }}
           >
             Try again

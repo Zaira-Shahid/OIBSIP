@@ -78,6 +78,16 @@ It is safe to run again: an existing admin is never duplicated or overwritten. T
 
 Staff sign in at `/admin/login` (linked as "Staff login" in the footer), which calls `POST /api/admin/login`. Customers cannot use it and admins cannot use the customer login. Everything under `/api/admin` (except that login) requires a valid admin token, checked against the database on every request.
 
+### Low-stock email alerts
+A `node-cron` job checks stock on a schedule and emails **one digest** listing every ingredient that newly became low or out of stock. Configure in `server/.env`:
+
+| Variable | Purpose |
+| --- | --- |
+| `LOW_STOCK_CHECK_CRON` | How often to check, as a cron expression. Default `*/15 * * * *` (every 15 minutes). Use `*/1 * * * *` for a 1-minute demo. |
+| `ADMIN_ALERT_EMAIL` | Where alerts go; falls back to `ADMIN_EMAIL`. Needs the Gmail SMTP settings from Module 3 (without SMTP, development prints the email to the server console). |
+
+No spam: an item is emailed once per state. It is emailed again only if it gets worse (low to out of stock), or after it was restocked to its threshold and later drops again. The inventory page has a **Run low-stock check now** button for demos; it runs the same job with the same rules. The server logs one line per run, for example `[low-stock] checked 21 items, alerted 2`.
+
 ### Change the admin password
 `seed:admin` never overwrites a password, so use the separate script. Put the admin's email in `ADMIN_EMAIL` and the **new** password in `ADMIN_PASSWORD` in `server/.env`, then:
 ```bash

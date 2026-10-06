@@ -17,6 +17,7 @@ router.get('/me', c.me);
 router.get('/orders', c.listOrders);
 router.patch('/orders/:id/status', validate(statusSchema), c.updateOrderStatus);
 router.get('/inventory', inventory.listInventory);
+router.post('/inventory/check-low-stock', inventory.checkLowStock);
 router.patch('/inventory/:id', validate(inventoryUpdateSchema), inventory.updateInventoryItem);
 
 module.exports = router;

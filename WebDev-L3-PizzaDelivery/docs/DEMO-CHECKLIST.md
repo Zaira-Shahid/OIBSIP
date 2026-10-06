@@ -1,6 +1,6 @@
 # Demo checklist
 
-Run through this before recording the demo video. Items marked **(later)** do not exist yet and should be skipped until their module is approved.
+Run through this before recording the demo video. Items marked **(later)** do not exist yet and should be skipped until their module is approved. (Everything below exists as of Module 10.)
 
 ## Setup
 
@@ -26,13 +26,14 @@ Run through this before recording the demo video. Items marked **(later)** do no
 - [ ] Footer **Staff login** (or `/admin/login`), sign in as the admin
 - [ ] Admin dashboard opens; the navbar shows admin links only
 - [ ] A customer account cannot sign in here
-- [ ] Admin orders screen with status updates **(later, Module 10)**
-- [ ] The customer's My orders updates live when the admin changes the status **(later, Module 10)**
+- [ ] **Orders** screen lists the customer's paid order (name, email, pizza, quantity, amount, Paid)
+- [ ] Click **Mark In Kitchen**, then **Mark Sent to Delivery**; only the next legal step is offered
+- [ ] In the customer window, My orders and the order detail update by themselves within ~5 seconds (no reload), with the 3-step tracker moving
 - [ ] Admin dashboard shows low / out-of-stock counts; **Manage inventory** opens the stock table
 - [ ] After the customer's payment, the matching ingredients' stock in the admin table has dropped by the quantity (reload the page)
 - [ ] Set one item's stock to a small number: its badge changes to Low stock; set 0: Out of stock, and the customer's builder shows it as out of stock
 - [ ] Use **+10** / **+50** to restock, and change a low-stock threshold
-- [ ] Low-stock email **(later, Module 10)**
+- [ ] Low-stock email: set `LOW_STOCK_CHECK_CRON=*/1 * * * *` in `.env` before starting the server, lower one item's stock below its threshold, wait up to a minute for one digest email (or click **Run low-stock check now**); a second check sends nothing; restock above the threshold and drop again to get a new email
 
 ## Before recording
 

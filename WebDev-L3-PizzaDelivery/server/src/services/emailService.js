@@ -81,4 +81,38 @@ const sendPasswordResetEmail = (user, token) =>
     ),
   });
 
-module.exports = { sendEmail, sendVerificationEmail, sendPasswordResetEmail, setTransport, isSmtpConfigured };
+const STATUS_LABEL = { LOW: 'Low stock', OUT_OF_STOCK: 'Out of stock' };
+
+// One email listing every item that newly needs attention. `items` is [{ name, category, stock, unit, lowStockThreshold, status }].
+const sendLowStockDigest = (to, items) => {
+  const count = `${items.length} ingredient${items.length === 1 ? '' : 's'}`;
+  const lines = items.map(
+    (i) => `- ${i.name} (${i.category}): ${i.stock} ${i.unit} left, threshold ${i.lowStockThreshold} - ${STATUS_LABEL[i.status]}`
+  );
+  const text = [
+    `Low-stock alert: ${count} need${items.length === 1 ? 's' : ''} attention.`,
+    '',
+    ...lines,
+    '',
+    `Restock in the admin inventory: ${env.clientUrl}/admin/inventory`,
+    '',
+    '- Slice & Co.',
+  ].join('\n');
+  const cell = 'padding:6px 10px;border-bottom:1px solid #eadfce;text-align:left';
+  const rows = items
+    .map(
+      (i) =>
+        `<tr><td style="${cell}">${escapeHtml(i.name)}</td><td style="${cell}">${escapeHtml(i.category)}</td>` +
+        `<td style="${cell}">${escapeHtml(i.stock)} ${escapeHtml(i.unit)}</td><td style="${cell}">${escapeHtml(i.lowStockThreshold)}</td>` +
+        `<td style="${cell};font-weight:bold;color:${i.status === 'OUT_OF_STOCK' ? '#b42318' : '#b7791f'}">${STATUS_LABEL[i.status]}</td></tr>`
+    )
+    .join('');
+  const html =
+    `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#2b2118"><h2 style="color:#c0392b">Slice &amp; Co. low-stock alert</h2>` +
+    `<p>${escapeHtml(count)} need${items.length === 1 ? 's' : ''} attention.</p>` +
+    `<table style="border-collapse:collapse;width:100%"><thead><tr><th style="${cell}">Item</th><th style="${cell}">Category</th><th style="${cell}">Stock</th><th style="${cell}">Threshold</th><th style="${cell}">Status</th></tr></thead><tbody>${rows}</tbody></table>` +
+    `<p><a href="${escapeHtml(env.clientUrl)}/admin/inventory">Open the inventory</a></p></div>`;
+  return sendEmail({ to, subject: `Low stock alert: ${count} - Slice & Co.`, text, html });
+};
+
+module.exports = { sendEmail, sendVerificationEmail, sendPasswordResetEmail, sendLowStockDigest, setTransport, isSmtpConfigured };

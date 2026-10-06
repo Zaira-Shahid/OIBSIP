@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminInventory from './pages/AdminInventory'
 import AdminLogin from './pages/AdminLogin'
+import AdminOrders from './pages/AdminOrders'
 import AdminRoute from './components/AdminRoute'
 import Builder from './pages/Builder'
 import Dashboard from './pages/Dashboard'
@@ -42,6 +43,7 @@ export default function App() {
             <Route element={<AdminRoute />}>
               <Route path="admin/dashboard" element={<AdminDashboard />} />
               <Route path="admin/inventory" element={<AdminInventory />} />
+              <Route path="admin/orders" element={<AdminOrders />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>

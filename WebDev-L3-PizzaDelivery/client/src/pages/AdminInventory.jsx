@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import InventoryRow from '../components/InventoryRow'
 import { getErrorMessage } from '../services/api'
-import { fetchInventory } from '../services/inventoryService'
+import { fetchInventory, runLowStockCheck } from '../services/inventoryService'
 
 const GROUPS = [
   { category: 'base', title: 'Pizza bases' },
@@ -14,6 +14,7 @@ const GROUPS = [
 export default function AdminInventory() {
   const [state, setState] = useState({ status: 'loading', items: [], error: '' })
   const [attempt, setAttempt] = useState(0)
+  const [check, setCheck] = useState({ running: false, kind: '', text: '' })
 
   useEffect(() => {
     let cancelled = false
@@ -28,6 +29,20 @@ export default function AdminInventory() {
   // Replace one row with the server's latest version of that item.
   const replaceItem = (updated) =>
     setState((s) => ({ ...s, items: s.items.map((i) => (i.id === updated.id ? updated : i)) }))
+
+  // Demo helper: runs the same job as the scheduler, with the same no-duplicate rules.
+  async function checkNow() {
+    setCheck({ running: true, kind: '', text: '' })
+    try {
+      const { alerted } = await runLowStockCheck()
+      const text = alerted.length
+        ? `Alert sent for ${alerted.length} item${alerted.length === 1 ? '' : 's'}: ${alerted.map((a) => a.name).join(', ')}.`
+        : 'No new low-stock items.'
+      setCheck({ running: false, kind: 'ok', text })
+    } catch (err) {
+      setCheck({ running: false, kind: 'error', text: getErrorMessage(err) })
+    }
+  }
 
   const active = state.items.filter((i) => i.active)
   const low = active.filter((i) => i.status === 'LOW').length
@@ -63,6 +78,17 @@ export default function AdminInventory() {
           <p className="inv-summary" role="status">
             {low === 0 && out === 0 ? 'All active items are well stocked.' : `${low} low stock · ${out} out of stock`}
           </p>
+          <div className="inv-check">
+            <button type="button" className="btn btn--ghost" onClick={checkNow} disabled={check.running}>
+              {check.running ? 'Checking…' : 'Run low-stock check now'}
+            </button>
+            <span className="field__hint"> The scheduled check runs automatically; this runs the same check on demand.</span>
+            {check.text && (
+              <p className={check.kind === 'error' ? 'field__error' : 'inv-ok'} role={check.kind === 'error' ? 'alert' : 'status'}>
+                {check.text}
+              </p>
+            )}
+          </div>
           {GROUPS.map(({ category, title }) => (
             <div key={category} className="card inv-group">
               <h2>{title}</h2>
