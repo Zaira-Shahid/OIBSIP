@@ -1,9 +1,10 @@
 const express = require('express');
 const c = require('../controllers/admin.controller');
+const inventory = require('../controllers/inventory.controller');
 const { authenticateUser, requireAdmin } = require('../middleware/auth');
 const { adminLoginLimiter } = require('../middleware/rateLimiters');
 const { validate, loginSchema } = require('../validators/auth.validators');
-const { statusSchema } = require('../validators/admin.validators');
+const { statusSchema, inventoryUpdateSchema } = require('../validators/admin.validators');
 
 const router = express.Router();
 
@@ -15,5 +16,7 @@ router.use(authenticateUser, requireAdmin);
 router.get('/me', c.me);
 router.get('/orders', c.listOrders);
 router.patch('/orders/:id/status', validate(statusSchema), c.updateOrderStatus);
+router.get('/inventory', inventory.listInventory);
+router.patch('/inventory/:id', validate(inventoryUpdateSchema), inventory.updateInventoryItem);
 
 module.exports = router;

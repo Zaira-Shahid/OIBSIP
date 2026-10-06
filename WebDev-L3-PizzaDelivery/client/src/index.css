@@ -143,3 +143,32 @@ a { color: var(--c-primary); }
 .order-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .order-list__item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 20px; }
 .order-list__side { text-align: right; display: flex; flex-direction: column; gap: 4px; }
+
+/* Admin inventory */
+.inv-summary { font-weight: 600; margin: 0 0 16px; }
+.inv-group { margin-bottom: 20px; padding: 16px 20px; }
+.inv-group h2 { margin: 0 0 8px; font-size: 1.15rem; }
+.inv-table { width: 100%; border-collapse: collapse; }
+.inv-table th, .inv-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--c-border); vertical-align: top; }
+.inv-table thead th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-muted); }
+.inv-table tbody th { font-weight: 700; }
+.inv-input { width: 7rem; padding: 8px 10px; border: 1px solid var(--c-border); border-radius: 8px; font: inherit; background: #fff; color: var(--c-text); }
+.inv-input[aria-invalid='true'] { border-color: var(--c-err); }
+.inv-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.inv-actions .btn { padding: 6px 12px; }
+.inv-row--inactive { background: #f6f1e8; }
+.inv-tag { display: block; font-size: 0.75rem; font-weight: 600; color: var(--c-muted); }
+.inv-ok { margin: 4px 0 0; font-size: 0.875rem; color: var(--c-ok); }
+.inv-overview { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
+.badge--ok { background: #e6f4ea; color: #145a2d; border-color: #b7dfc3; }
+.badge--low { background: #fff4d6; color: #7a4e00; border-color: #f0d48a; }
+.badge--out_of_stock { background: #fdecea; color: #8c1d13; border-color: #f2b8b2; }
+@media (max-width: 760px) {
+  .inv-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .inv-table tr { display: block; padding: 12px 0; border-bottom: 2px solid var(--c-border); }
+  .inv-table th, .inv-table td { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 0; padding: 4px 0; }
+  .inv-table td::before, .inv-table tbody th::before { content: attr(data-label); font-size: 0.8rem; color: var(--c-muted); font-weight: 600; }
+  .inv-table td[data-label='Actions'] { display: block; }
+  .inv-table tbody th::before { content: none; }
+}

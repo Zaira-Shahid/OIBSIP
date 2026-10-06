@@ -28,7 +28,11 @@ Run through this before recording the demo video. Items marked **(later)** do no
 - [ ] A customer account cannot sign in here
 - [ ] Admin orders screen with status updates **(later, Module 10)**
 - [ ] The customer's My orders updates live when the admin changes the status **(later, Module 10)**
-- [ ] Inventory dashboard, manual stock update, low-stock email **(later, Modules 9/10)**
+- [ ] Admin dashboard shows low / out-of-stock counts; **Manage inventory** opens the stock table
+- [ ] After the customer's payment, the matching ingredients' stock in the admin table has dropped by the quantity (reload the page)
+- [ ] Set one item's stock to a small number: its badge changes to Low stock; set 0: Out of stock, and the customer's builder shows it as out of stock
+- [ ] Use **+10** / **+50** to restock, and change a low-stock threshold
+- [ ] Low-stock email **(later, Module 10)**
 
 ## Before recording
 
