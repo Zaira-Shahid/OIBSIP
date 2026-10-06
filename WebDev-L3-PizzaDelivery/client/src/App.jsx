@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AuthProvider from './context/AuthProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 import MainLayout from './layouts/MainLayout'
+import Builder from './pages/Builder'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import Home from './pages/Home'
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="reset-password" element={<ResetPassword />} />
             <Route element={<ProtectedRoute />}>
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="builder" element={<Builder />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
