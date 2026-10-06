@@ -195,10 +195,18 @@ Automated: `cd server && npm test` runs 62 tests (14 auth + 15 email flows + 9 m
 | `POST /api/pizzas/price` quotes unit price, quantity and total | ✅ |
 | Client `npm run lint` (no warnings) and `npm run build` | ✅ |
 
+### Browser check (Module 6) - done by Zaira
+
+| Check | Result |
+| ----- | ------ |
+| Builder steps lead to the order summary with itemised prices | ✅ |
+| Changing the quantity updates the total | ✅ |
+| "Edit pizza" keeps the choices | ✅ |
+| "Proceed to pay" creates the unpaid order and shows a clear notice | ✅ |
+| "My orders" shows the empty state | ✅ |
+
 ### Not yet verified (Module 6)
 
-- **The new pages in a browser** (builder review → order summary → "Proceed to pay", Edit pizza, My orders). They compile and lint but have not been clicked through.
-- The running dev API server needs a restart to serve `/api/orders`.
 - "My orders" stays empty until Module 7 can confirm a paid order. The list and detail pages are covered by API tests only, not by seeing real data in the browser.
 
 ### How to check Module 6 yourself

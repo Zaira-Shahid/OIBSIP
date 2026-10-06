@@ -17,7 +17,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U6  | At least 5 sauces                        | 4, 5              | `InventoryItem` (category `sauce`), `seed:menu`, `GET /api/ingredients` | `server/tests/menu.test.js`, `builder.test.js` | ✅ approved by Zaira |
 | U7  | Cheese selection                         | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U8  | Multiple vegetable selection             | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
-| U9  | Order summary                            | 6                 | `OrderSummary`, `PizzaBreakdown`, `POST /api/orders` | `server/tests/orders.test.js` | 🚧 API tests pass; browser check pending |
+| U9  | Order summary                            | 6                 | `OrderSummary`, `PizzaBreakdown`, `POST /api/orders` | `server/tests/orders.test.js` | ✅ API tests pass; browser check done by Zaira |
 | U10 | Razorpay test-mode checkout              | 7                 | -              | -    | ☐      |
 | U11 | Order statuses (Received/Kitchen/Delivery) | 6, 10           | -              | -    | ☐      |
 | U12 | Real-time status on user dashboard       | 10                | -              | -    | ☐      |
@@ -38,7 +38,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 3  | Email verification & password recovery      | ✅ approved by Zaira (real-inbox check not run by Claude; U1–U3 stay 🚧 until that is done) |
 | 4  | Pizza dashboard                             | ✅ approved by Zaira (U5/U6 stay 🚧 until the Module 5 builder shows them) |
 | 5  | Custom pizza builder                        | ✅ approved by Zaira |
-| 6  | Order management                            | 🚧 built, tests pass; awaiting Zaira's browser check and "approved" |
+| 6  | Order management                            | ✅ approved by Zaira (merged via PR #4) |
 | 7  | Razorpay payment                            | ☐ |
 | 8  | Admin authentication & authorization        | ☐ |
 | 9  | Inventory management                        | ☐ |
