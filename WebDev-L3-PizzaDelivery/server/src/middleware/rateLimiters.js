@@ -13,4 +13,10 @@ const createLimiter = (max) =>
       res.status(429).json({ success: false, message: 'Too many attempts. Please try again in a few minutes.' }),
   });
 
-module.exports = { registerLimiter: createLimiter(10), loginLimiter: createLimiter(20) };
+module.exports = {
+  registerLimiter: createLimiter(10),
+  loginLimiter: createLimiter(20),
+  // Anything that sends an email or consumes a one-time token.
+  emailLimiter: createLimiter(5),
+  tokenLimiter: createLimiter(20),
+};

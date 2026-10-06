@@ -78,3 +78,38 @@ These were deliberately skipped in the browser and are **not** claimed as verifi
 
 - An older pre-existing account rejected login (most likely a forgotten password). It will be used to test forgot-password in Module 3.
 - The real Atlas `pizza-delivery` database has the browser-registered customer account and the seeded admin. Automated tests use `pizza-delivery-test`.
+
+## Module 3 - Email verification & password recovery
+
+Automated: `cd server && npm test` now runs 29 tests (14 auth + 15 email flows). **29 of 29 pass.** Email flow tests inject a fake mail transport, so no real email is sent; tests pin `AUTH_REQUIRE_VERIFIED=true` regardless of the developer `.env`.
+
+| Check | Result |
+| --- | --- |
+| Registration sends exactly one verification email (link `<CLIENT_URL>/verify-email?token=<64 hex>`, HTML + text); API response never contains the raw token; only its SHA-256 hash is stored | ✅ |
+| Registration still succeeds with `emailSent:false` when the mail server fails | ✅ |
+| Email service refuses to send when no transport/SMTP exists outside development | ✅ |
+| Unverified login returns 403 with `code: EMAIL_NOT_VERIFIED` | ✅ |
+| Valid verification link verifies the account; login then works | ✅ |
+| Verification link is single-use (second use: 400) | ✅ |
+| Unknown, malformed, missing and expired verification tokens rejected (400); expired token leaves account unverified | ✅ |
+| Resend verification: identical response for existing and unknown emails; mail only goes to the real unverified account; new link works | ✅ |
+| Forgot password: identical response for existing and unknown emails; only the real account gets mail; token hash stored; ~1 hour expiry | ✅ |
+| Forgot password: invalid email format 400; admin accounts get no reset email | ✅ |
+| Reset: weak password rejected; valid reset works; old password then 401, new password 200; token cleared and single-use | ✅ |
+| Reset: unknown, malformed, missing and expired tokens rejected (400) | ✅ |
+| Reset invalidates JWTs issued before it (401 "password was changed"); a fresh login works | ✅ |
+| Reset also verifies an unverified account (mailbox ownership proven by the link) | ✅ |
+| Client `npm run lint` and `npm run build` | ✅ |
+| Live run through the Vite proxy against the real server (SMTP not configured, dev console fallback), throwaway user: register, verify, verify again (rejected), forgot (existing and unknown give the same message), reset, old password 401, new password 200; `/verify-email`, `/forgot-password`, `/reset-password` routes served | ✅ (throwaway user deleted afterwards) |
+
+### Not yet verified (Module 3)
+
+- **A real email delivered to a real inbox via Gmail SMTP.** `EMAIL_USER`, `EMAIL_PASSWORD` and `EMAIL_FROM` are not yet set in `server/.env`. Until they are, only the fake transport and the development console fallback have been exercised.
+- **The new pages in a browser** (VerifyEmail, ForgotPassword, ResetPassword, the "Resend verification email" button and the updated Register/Login screens). They compile and their routes are served, but have not been clicked through.
+
+### How to check Module 3 yourself
+
+1. Put your Gmail address and a Gmail App Password in `server/.env` (`EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM`), set `AUTH_REQUIRE_VERIFIED=true`, restart the server.
+2. Register a new account: expect the "We sent a verification link" screen and an email. Logging in before clicking the link shows the 403 message and a "Resend verification email" button.
+3. Click the link: "Your email has been verified". Reload the same link: "invalid, expired or already used". Log in.
+4. Log out, "Forgot your password?", enter the email, open the emailed link, set a new password, log in with it. The old password must fail.

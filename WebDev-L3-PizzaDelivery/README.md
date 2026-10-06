@@ -66,7 +66,7 @@ Fill in `server/.env`. Never commit this file. Variables:
 | `AUTH_REQUIRE_VERIFIED` | Module 2 (temporary) | `false` lets unverified users log in during development; ignored in production |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Module 2 | Used only by `npm run seed:admin` |
 | `CLIENT_URL` | Module 1 | CORS origin / email links (default `http://localhost:5173`) |
-| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM` | Module 3 | Gmail SMTP (App Password) |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM` | Module 3 | Gmail SMTP (App Password). If `EMAIL_USER`/`EMAIL_PASSWORD` are empty and `NODE_ENV=development`, emails are printed to the server console instead of sent |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Module 7 | Razorpay **test** keys |
 
 ### Create the admin account
@@ -89,6 +89,7 @@ The Vite dev server proxies `/api` to the backend. Check `http://localhost:5000/
 ## Troubleshooting
 
 - **`querySrv ECONNREFUSED` on startup** - Node's DNS resolver can fail the `mongodb+srv://` lookup on some networks (seen with Pakistani ISP DNS) even when the OS resolves it. The server detects this specific failure and retries once with Google/Cloudflare public DNS; networks that work normally never use the fallback. Alternatives: set your OS DNS to 8.8.8.8, or use Atlas's standard (non-SRV) `mongodb://` connection string.
+- **Emails are not arriving** - use a Gmail *App Password* (Google account > Security > 2-Step Verification > App passwords), not your normal password, and check the spam folder. Without SMTP settings in development the link is printed in the server console.
 - **"Could not connect to any servers"** - add your IP under Atlas *Network Access*.
 
 ## Tests

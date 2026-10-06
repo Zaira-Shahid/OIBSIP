@@ -13,6 +13,13 @@ const env = {
   // TEMPORARY (until Module 3 email verification is verified): set AUTH_REQUIRE_VERIFIED=false
   // in development to let unverified users log in. Always true in production.
   requireVerified: nodeEnv === 'production' || process.env.AUTH_REQUIRE_VERIFIED !== 'false',
+  email: {
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: Number(process.env.EMAIL_PORT) || 587,
+    user: process.env.EMAIL_USER || '',
+    password: process.env.EMAIL_PASSWORD || '',
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER || '',
+  },
   adminEmail: (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD || '',
 };
