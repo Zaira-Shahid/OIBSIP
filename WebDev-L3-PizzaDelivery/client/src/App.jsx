@@ -8,6 +8,9 @@ import ForgotPassword from './pages/ForgotPassword'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
+import OrderDetail from './pages/OrderDetail'
+import OrderSummary from './pages/OrderSummary'
+import Orders from './pages/Orders'
 import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
 import VerifyEmail from './pages/VerifyEmail'
@@ -27,6 +30,9 @@ export default function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="builder" element={<Builder />} />
+              <Route path="order-summary" element={<OrderSummary />} />
+              <Route path="orders" element={<Orders />} />
+              <Route path="orders/:id" element={<OrderDetail />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>

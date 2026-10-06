@@ -19,4 +19,6 @@ module.exports = {
   // Anything that sends an email or consumes a one-time token.
   emailLimiter: createLimiter(5),
   tokenLimiter: createLimiter(20),
+  // Each accepted request stores an unpaid order.
+  orderLimiter: createLimiter(30),
 };

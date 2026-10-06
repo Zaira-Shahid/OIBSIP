@@ -22,8 +22,8 @@ exports.getPizza = asyncHandler(async (req, res) => {
 
 // Server-side price for a custom pizza. Nothing is stored; the client total is only ever a preview.
 exports.priceCustomPizza = asyncHandler(async (req, res) => {
-  const { items, total } = await priceCustomPizza(req.body);
-  res.json({ success: true, data: { items, total } });
+  const data = await priceCustomPizza(req.body);
+  res.json({ success: true, data });
 });
 
 // Active builder ingredients grouped by category. Customers only see availability, never stock numbers.

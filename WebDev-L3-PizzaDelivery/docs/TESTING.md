@@ -173,3 +173,38 @@ Automated: `cd server && npm test` now runs 49 tests (14 auth + 15 email flows +
 2. Step 1-2: Next with nothing chosen shows an error; choose a base and a sauce. Step 3: only one cheese can be selected. Step 4: select several vegetables, or none.
 3. Back keeps every selection. The stepper shows the current and completed steps. On the review step the total is confirmed by the server and each "Change" link returns to its step.
 4. Check with the keyboard (Tab, arrow keys, Space) and at phone width.
+
+## Module 6 - Order management (branch `module-6-order-management`)
+
+Automated: `cd server && npm test` runs 62 tests (14 auth + 15 email flows + 9 menu + 11 builder + 13 orders). **62 of 62 pass.**
+
+| Check | Result |
+| ----- | ------ |
+| All `/api/orders` endpoints need a login (401) | ✅ |
+| Order created unpaid: `paymentStatus` PENDING, no `orderStatus`, amount = unit price × quantity, snapshot stored | ✅ |
+| Quantity defaults to 1; 0, 6, -1, 1.5, "2", null rejected | ✅ |
+| Client-sent `amount`, `total`, `unitPrice`, `orderStatus`, `paymentStatus`, `userId` rejected | ✅ |
+| Amount follows database prices; snapshot keeps the price and name at order time | ✅ |
+| Out-of-stock (409), insufficient stock for the quantity (409), exactly enough stock (201), inactive ingredient (400) | ✅ |
+| Rejected or invalid requests create no order | ✅ |
+| PENDING orders do not change any stock | ✅ |
+| Unpaid orders hidden from history and detail | ✅ |
+| Confirmed orders newest first; users see only their own; other/unknown/malformed ids all 404 | ✅ |
+| No stock numbers or owner id in responses | ✅ |
+| `orderStatus` accepts only ORDER_RECEIVED, IN_KITCHEN, SENT_TO_DELIVERY | ✅ |
+| `POST /api/pizzas/price` quotes unit price, quantity and total | ✅ |
+| Client `npm run lint` (no warnings) and `npm run build` | ✅ |
+
+### Not yet verified (Module 6)
+
+- **The new pages in a browser** (builder review → order summary → "Proceed to pay", Edit pizza, My orders). They compile and lint but have not been clicked through.
+- The running dev API server needs a restart to serve `/api/orders`.
+- "My orders" stays empty until Module 7 can confirm a paid order. The list and detail pages are covered by API tests only, not by seeing real data in the browser.
+
+### How to check Module 6 yourself
+
+1. Restart the API server, log in, build a pizza and click **Continue to summary**.
+2. Check the itemised table (base, sauce, cheese, vegetables, price per pizza, quantity, total). Change the quantity 1-5 and watch the total change.
+3. **Edit pizza** returns to the builder review with your choices kept.
+4. Click **Proceed to pay**: a "not confirmed yet" notice and a disabled "Payment coming next" button appear. In MongoDB a new order exists with `paymentStatus: PENDING` and no `orderStatus`, and no ingredient stock has changed.
+5. Open **My orders**: empty, because the order is unpaid.

@@ -17,7 +17,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U6  | At least 5 sauces                        | 4, 5              | `InventoryItem` (category `sauce`), `seed:menu`, `GET /api/ingredients` | `server/tests/menu.test.js`, `builder.test.js` | ✅ approved by Zaira |
 | U7  | Cheese selection                         | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U8  | Multiple vegetable selection             | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
-| U9  | Order summary                            | 6                 | -              | -    | ☐      |
+| U9  | Order summary                            | 6                 | `OrderSummary`, `PizzaBreakdown`, `POST /api/orders` | `server/tests/orders.test.js` | 🚧 API tests pass; browser check pending |
 | U10 | Razorpay test-mode checkout              | 7                 | -              | -    | ☐      |
 | U11 | Order statuses (Received/Kitchen/Delivery) | 6, 10           | -              | -    | ☐      |
 | U12 | Real-time status on user dashboard       | 10                | -              | -    | ☐      |
@@ -38,7 +38,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 3  | Email verification & password recovery      | ✅ approved by Zaira (real-inbox check not run by Claude; U1–U3 stay 🚧 until that is done) |
 | 4  | Pizza dashboard                             | ✅ approved by Zaira (U5/U6 stay 🚧 until the Module 5 builder shows them) |
 | 5  | Custom pizza builder                        | ✅ approved by Zaira |
-| 6  | Order management                            | ☐ |
+| 6  | Order management                            | 🚧 built, tests pass; awaiting Zaira's browser check and "approved" |
 | 7  | Razorpay payment                            | ☐ |
 | 8  | Admin authentication & authorization        | ☐ |
 | 9  | Inventory management                        | ☐ |
@@ -69,8 +69,19 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - Out-of-stock or inactive ingredients are rejected by the price endpoint (409 `OUT_OF_STOCK` / 400).
 - Preset pre-selection (`defaultIngredients` on Pizza) is lower priority and not built yet; "Customize" currently opens the same empty builder.
 
+## Module 6 decisions (approved by Zaira)
+
+- One custom pizza per order, quantity 1-5. The server recomputes `amount = unitPrice x quantity`; `unitPrice` and `quantity` are stored on the order.
+- The unpaid (`paymentStatus: PENDING`, no `orderStatus`) order is created only when the user clicks "Proceed to pay", not when the summary opens.
+- PENDING orders never reserve or decrement stock. Stock is checked at creation (`stock >= quantity` for every ingredient, 409 `OUT_OF_STOCK` / `INSUFFICIENT_STOCK`). Decrement happens only after payment verification (Modules 7/9), with the same `stock >= quantity` condition.
+- `GET /api/orders` and `GET /api/orders/:id` return only confirmed orders (`orderStatus` set) belonging to the caller; anything else is 404.
+- The order stores a snapshot (ingredient id, name, price) of every ingredient, so history does not depend on current inventory.
+- Until Module 7 the summary shows a disabled "Payment coming next" button and a "not confirmed yet" notice; no fake success.
+
 ## TODO
 
+- [ ] **After Module 7:** preset pizza pre-select. Decide how a preset's listed price relates to the builder's ingredient-sum price (Margherita is listed at ₹249 but its ingredients sum to about ₹140). If a `defaultIngredients` field is added to Pizza, keep `seed:menu` idempotent and update existing dev records safely. "Customize" currently opens an empty builder for every pizza.
+- [ ] **Module 7:** the Razorpay flow should reuse the unpaid order created by "Proceed to pay". Unpaid orders left behind (user abandons payment) need a cleanup or expiry decision.
 - [ ] **After Module 3 is verified:** remove the temporary `AUTH_REQUIRE_VERIFIED` setting (or keep it hard-coded to `true`). It exists only so unverified users can log in during development; it is already ignored in production.
 - [ ] Restrict Atlas Network Access (currently `0.0.0.0/0`) before any deployment.
 - [ ] Module 8: separate `POST /api/admin/login`. `POST /api/auth/login` already rejects admin accounts.
