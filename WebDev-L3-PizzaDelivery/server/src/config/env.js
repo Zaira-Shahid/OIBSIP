@@ -20,6 +20,11 @@ const env = {
     password: process.env.EMAIL_PASSWORD || '',
     from: process.env.EMAIL_FROM || process.env.EMAIL_USER || '',
   },
+  // Razorpay TEST-mode keys only (key id must start with rzp_test_). Payments are disabled until both are set.
+  razorpay: {
+    keyId: (process.env.RAZORPAY_KEY_ID || '').trim(),
+    keySecret: (process.env.RAZORPAY_KEY_SECRET || '').trim(),
+  },
   adminEmail: (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD || '',
 };

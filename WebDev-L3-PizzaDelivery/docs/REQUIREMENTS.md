@@ -18,12 +18,12 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U7  | Cheese selection                         | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U8  | Multiple vegetable selection             | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U9  | Order summary                            | 6                 | `OrderSummary`, `PizzaBreakdown`, `POST /api/orders` | `server/tests/orders.test.js` | ✅ API tests pass; browser check done by Zaira |
-| U10 | Razorpay test-mode checkout              | 7                 | -              | -    | ☐      |
-| U11 | Order statuses (Received/Kitchen/Delivery) | 6, 10           | -              | -    | ☐      |
+| U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | ✅ approved by Zaira (real test-mode checkout verified) |
+| U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`, set to ORDER_RECEIVED on verified payment | `server/tests/payments.test.js` | 🚧 Received done; Kitchen/Delivery by admin in Modules 8/10 |
 | U12 | Real-time status on user dashboard       | 10                | -              | -    | ☐      |
 | A1  | Separate admin login                     | 8                 | -              | -    | ☐      |
 | A2  | Inventory dashboard                      | 9                 | -              | -    | ☐      |
-| A3  | Automatic stock decrement after orders   | 9                 | -              | -    | ☐      |
+| A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | 🚧 implemented in Module 7; verify with the admin inventory view in Module 9 |
 | A4  | Manual stock update                      | 9                 | -              | -    | ☐      |
 | A5  | Configurable low-stock threshold         | 9, 10             | -              | -    | ☐      |
 | A6  | Scheduled low-stock email (node-cron)    | 10                | -              | -    | ☐      |
@@ -39,7 +39,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 4  | Pizza dashboard                             | ✅ approved by Zaira (U5/U6 stay 🚧 until the Module 5 builder shows them) |
 | 5  | Custom pizza builder                        | ✅ approved by Zaira |
 | 6  | Order management                            | ✅ approved by Zaira (merged via PR #4) |
-| 7  | Razorpay payment                            | ☐ |
+| 7  | Razorpay payment                            | ✅ approved by Zaira |
 | 8  | Admin authentication & authorization        | ☐ |
 | 9  | Inventory management                        | ☐ |
 | 10 | Low-stock automation + real-time tracking   | ☐ |
@@ -76,12 +76,21 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - PENDING orders never reserve or decrement stock. Stock is checked at creation (`stock >= quantity` for every ingredient, 409 `OUT_OF_STOCK` / `INSUFFICIENT_STOCK`). Decrement happens only after payment verification (Modules 7/9), with the same `stock >= quantity` condition.
 - `GET /api/orders` and `GET /api/orders/:id` return only confirmed orders (`orderStatus` set) belonging to the caller; anything else is 404.
 - The order stores a snapshot (ingredient id, name, price) of every ingredient, so history does not depend on current inventory.
-- Until Module 7 the summary shows a disabled "Payment coming next" button and a "not confirmed yet" notice; no fake success.
+
+## Module 7 decisions (approved by Zaira)
+
+- Razorpay **test keys only** (`rzp_test_`; anything else is refused). No webhook for now (**note for Module 11**). The amount comes from the stored order (database prices) in paise.
+- `POST /api/orders/:id/payment` re-checks stock and prices (409 if insufficient or changed) and creates a **fresh** Razorpay order every time, so closing the popup never blocks a retry.
+- `POST /api/payments/verify` checks the HMAC signature, claims `PENDING -> PAID` atomically (only one request can), then takes `quantity` of every ingredient with an atomic `stock >= quantity` condition, rolling back on any shortfall. Only then is `orderStatus` set to `ORDER_RECEIVED`. A repeated verify never decrements twice.
+- Rare race (stock gone after payment): `paymentStatus: PAID`, no `orderStatus`, `needsRefund: true`, a clear message to the user; the refund is manual. Documented in the README.
+- The stock decrement lives in Module 7 (spec section 12); Module 9 adds the admin inventory UI, manual updates and alerts without changing verify.
 
 ## TODO
 
+- [ ] **Module 11:** add a Razorpay webhook (`payment.captured`) as a safety net for browsers that close before verify, and a screen or report for `needsRefund` orders.
+
 - [ ] **After Module 7:** preset pizza pre-select. Decide how a preset's listed price relates to the builder's ingredient-sum price (Margherita is listed at ₹249 but its ingredients sum to about ₹140). If a `defaultIngredients` field is added to Pizza, keep `seed:menu` idempotent and update existing dev records safely. "Customize" currently opens an empty builder for every pizza.
-- [ ] **Module 7:** the Razorpay flow should reuse the unpaid order created by "Proceed to pay". Unpaid orders left behind (user abandons payment) need a cleanup or expiry decision.
+- [ ] Unpaid orders left behind (user abandons payment) are kept and hidden from history; decide on a cleanup or expiry (Module 11).
 - [ ] **After Module 3 is verified:** remove the temporary `AUTH_REQUIRE_VERIFIED` setting (or keep it hard-coded to `true`). It exists only so unverified users can log in during development; it is already ignored in production.
 - [ ] Restrict Atlas Network Access (currently `0.0.0.0/0`) before any deployment.
 - [ ] Module 8: separate `POST /api/admin/login`. `POST /api/auth/login` already rejects admin accounts.
