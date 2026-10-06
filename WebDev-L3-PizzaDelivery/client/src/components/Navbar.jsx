@@ -16,6 +16,7 @@ export default function Navbar() {
             <>
               <NavLink to="/admin/dashboard" className="nav-link">Admin dashboard</NavLink>
               <NavLink to="/admin/inventory" className="nav-link">Inventory</NavLink>
+              <NavLink to="/admin/orders" className="nav-link">Orders</NavLink>
               <span className="nav-user">Admin: {user.name}</span>
               <button type="button" className="btn btn--ghost" onClick={logout}>Log out</button>
             </>

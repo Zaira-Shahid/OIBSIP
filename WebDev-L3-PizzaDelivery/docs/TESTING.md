@@ -358,3 +358,43 @@ Not exercised in a browser: Deactivate/Activate, the "stock changed meanwhile" 4
 5. **Deactivate** an item: it disappears from the customer's builder and the row is marked hidden; **Activate** brings it back.
 6. **A3:** note a stock figure, pay for a pizza as a customer (test card), reload the admin page: each of that pizza's ingredients dropped by the quantity.
 7. **Concurrency (two windows):** load the inventory in two admin windows. Save a new stock in window A, then try to save a different number in window B without reloading: B shows the "changed to ..." message, refreshes that row, and saves nothing.
+
+## Module 10 - Low-stock alerts, live tracking, admin orders (branch `module-10-orders-alerts`)
+
+Automated: `cd server && npm test` runs 139 tests (112 earlier + 24 low-stock + 3 tracking). **139 of 139 pass.** All email is captured by a fake transport; `node-cron` is replaced by a fake where the scheduler is exercised.
+
+| Check | Result |
+| ----- | ------ |
+| Nothing low: no email; the run reports how many items it checked | ✅ |
+| Newly low items produce ONE digest with name, category, stock, threshold and status; equal-to-threshold is not alerted | ✅ |
+| An unchanged low item is never emailed again (3 further runs); a later digest lists only newly low items | ✅ |
+| Escalation LOW → OUT_OF_STOCK is one new email, then silence while it stays out | ✅ |
+| Restock to ≥ threshold through the admin API resets the alert immediately (before any scheduler run); a later drop emails again | ✅ |
+| `+10`/`+50` reset only once the item reaches its threshold; lowering a threshold so the item is OK also resets | ✅ |
+| OUT → partly restocked (still low) sends nothing, but falling to 0 again alerts; a run also clears state for items restocked behind its back | ✅ |
+| Inactive items ignored | ✅ |
+| Three overlapping runs send exactly one email; a second instance claiming an item first prevents a duplicate | ✅ |
+| A failed email never crashes the run, releases the claim, and the next run retries (also restores LOW after a failed escalation) | ✅ |
+| No recipient configured: nothing sent or marked; alerts flow once an address is set | ✅ |
+| Digest HTML escapes item names | ✅ |
+| `POST /api/admin/inventory/check-low-stock`: 401/403 for non-admins; same job and duplicate rules; clear 502 (mail failure) and 409 (no recipient) | ✅ |
+| Scheduler never starts under test; schedules the configured `LOW_STOCK_CHECK_CRON`; logs one brief line per run without the address; invalid expression falls back to the default with a warning; real `node-cron` accepts the default and a 1-minute expression | ✅ |
+| Customer sees each admin status change on the next fetch (detail and list); only the owner sees it; a new paid order appears in the admin list on the next fetch | ✅ |
+| Client `npm run lint` (no warnings) and `npm run build` | ✅ |
+
+### Not yet verified (Module 10)
+
+- **A real low-stock email delivered by Gmail SMTP**, and the real cron firing on schedule. Only the fake transport and a fake cron were exercised; the real `node-cron` was only checked for accepting the expressions.
+- **The new screens in a browser:** admin Orders, status buttons, the customer's live tracker and My orders updating by themselves, the dashboard counts, and the "Run low-stock check now" button.
+- **Polling behaviour** (pause when the tab is hidden, refresh when visible, stop on leaving the page, the "Reconnecting" hint). It compiles and lints; the client has no test runner.
+- The running dev API server must be restarted to get the new routes and to start the scheduler.
+
+### How to check Module 10 yourself
+
+1. In `server/.env` set `LOW_STOCK_CHECK_CRON=*/1 * * * *` and make sure `ADMIN_ALERT_EMAIL` (or `ADMIN_EMAIL`) and the Gmail SMTP settings are filled in. Restart the API server: the console prints `[low-stock] scheduler running (*/1 * * * *)` and one `[low-stock] checked N items, alerted M` line per minute.
+2. Admin (incognito window) → Inventory. Set one item's stock below its threshold (for example Classic base to 5). Within a minute, one email arrives listing that item. The next minutes send nothing. Alternatively click **Run low-stock check now**: it says "Alert sent for 1 item: Classic" the first time and "No new low-stock items." after that.
+3. Set the same item to 0: one more email (Out of stock). Restock it above its threshold, then lower it again: a new email.
+4. Customer (normal window): place and pay for an order. Admin → **Orders** lists it. Click **Mark In Kitchen**, then **Mark Sent to Delivery**.
+5. In the customer window, leave My orders (and the order detail) open and untouched: the status and the 3-step tracker change within about 5 seconds without a reload.
+6. Switch to another browser tab for a while, change the status as admin, then come back: the page refreshes straight away.
+7. Put the `.env` cron back to `*/15 * * * *` (or remove the line) after the demo.
