@@ -21,4 +21,6 @@ module.exports = {
   tokenLimiter: createLimiter(20),
   // Each accepted request stores an unpaid order.
   orderLimiter: createLimiter(30),
+  // Starting or verifying a payment.
+  paymentLimiter: createLimiter(30),
 };

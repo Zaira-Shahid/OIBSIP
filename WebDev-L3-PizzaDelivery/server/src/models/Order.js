@@ -27,7 +27,12 @@ const orderSchema = new mongoose.Schema(
     amount: { type: Number, required: true, min: 0 },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, default: 'PENDING' },
     paymentProvider: { type: String, default: 'razorpay' },
-    paymentReference: { type: String },
+    paymentReference: { type: String }, // Razorpay payment id, set when the signature is verified
+    razorpayOrderId: { type: String }, // latest gateway order; replaced on every payment retry
+    paidAt: { type: Date },
+    // Payment succeeded but stock could not be taken afterwards (rare race). Needs a manual refund.
+    needsRefund: { type: Boolean, default: false },
+    stockDeducted: { type: Boolean, default: false },
     // Deliberately unset until payment is verified: unpaid orders are not "received" and never appear in tracking.
     orderStatus: { type: String, enum: ORDER_STATUSES },
   },
@@ -39,6 +44,7 @@ const orderSchema = new mongoose.Schema(
         delete ret._id;
         delete ret.__v;
         delete ret.userId;
+        delete ret.stockDeducted; // internal bookkeeping for idempotency
         return ret;
       },
     },
