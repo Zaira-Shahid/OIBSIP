@@ -336,11 +336,18 @@ Automated: `cd server && npm test` runs 112 tests (96 earlier + 16 inventory). *
 | **A3 end to end:** unpaid order changes no stock; after verified payment the admin view shows each of the 5 ingredients down by the quantity and an unrelated item unchanged | ✅ |
 | Client `npm run lint` (no warnings) and `npm run build` | ✅ |
 
-### Not yet verified (Module 9)
+### Browser check (Module 9) - done by Zaira
 
-- **The inventory screens in a browser** (dashboard counts, stock table, Save, +10/+50, Deactivate, error and refresh behaviour, phone layout). They compile and lint but have not been clicked through.
-- The 409 "stock changed meanwhile" flow in the UI (needs two windows or an order placed while the page is open).
-- The running dev API server needs a restart to serve `/api/admin/inventory`.
+| Check | Result |
+| ----- | ------ |
+| Dashboard shows low and out-of-stock counts | ✅ |
+| Inventory grouped by the 4 categories | ✅ |
+| +10 / +50 and set-stock work | ✅ |
+| Low and Out of stock badges update | ✅ |
+| An out-of-stock item is disabled in the customer builder and comes back after a restock | ✅ |
+| A paid order decremented stock by the ordered quantity (A3 verified end to end) | ✅ |
+
+Not exercised in a browser: Deactivate/Activate, the "stock changed meanwhile" 409 flow with two windows, invalid-input messages, and the phone layout (all covered by API tests or code only).
 
 ### How to check Module 9 yourself
 
