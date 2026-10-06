@@ -21,7 +21,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | ✅ approved by Zaira (real test-mode checkout verified) |
 | U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`, set to ORDER_RECEIVED on verified payment | `server/tests/payments.test.js` | 🚧 Received done; Kitchen/Delivery by admin in Modules 8/10 |
 | U12 | Real-time status on user dashboard       | 10                | -              | -    | ☐      |
-| A1  | Separate admin login                     | 8                 | `POST /api/admin/login`, `requireAdmin` on `/api/admin`, `AdminLogin`, `AdminRoute` | `server/tests/admin.test.js` | 🚧 API tests pass; browser check pending |
+| A1  | Separate admin login                     | 8                 | `POST /api/admin/login`, `requireAdmin` on `/api/admin`, `AdminLogin`, `AdminRoute` | `server/tests/admin.test.js` | ✅ approved by Zaira |
 | A2  | Inventory dashboard                      | 9                 | -              | -    | ☐      |
 | A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | 🚧 implemented in Module 7; verify with the admin inventory view in Module 9 |
 | A4  | Manual stock update                      | 9                 | -              | -    | ☐      |
@@ -40,7 +40,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 5  | Custom pizza builder                        | ✅ approved by Zaira |
 | 6  | Order management                            | ✅ approved by Zaira (merged via PR #4) |
 | 7  | Razorpay payment                            | ✅ approved by Zaira |
-| 8  | Admin authentication & authorization        | 🚧 built, tests pass; awaiting Zaira's browser check and "approved" |
+| 8  | Admin authentication & authorization        | ✅ approved by Zaira |
 | 9  | Inventory management                        | ☐ |
 | 10 | Low-stock automation + real-time tracking   | ☐ |
 | 11 | Testing, UI polish & submission             | ☐ |
