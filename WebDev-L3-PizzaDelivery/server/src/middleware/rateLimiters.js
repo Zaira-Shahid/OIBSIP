@@ -23,4 +23,6 @@ module.exports = {
   orderLimiter: createLimiter(30),
   // Starting or verifying a payment.
   paymentLimiter: createLimiter(30),
+  // Stricter than the customer login: there is one admin account worth guessing.
+  adminLoginLimiter: createLimiter(10),
 };

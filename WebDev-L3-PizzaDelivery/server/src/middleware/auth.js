@@ -35,4 +35,10 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-module.exports = { authenticateUser, requireAdmin };
+// Must run after authenticateUser. Ordering and paying are customer actions; staff accounts cannot do them.
+const requireCustomer = (req, res, next) => {
+  if (req.user?.role !== 'user') return next(new ApiError(403, 'Admin accounts cannot place or pay for orders.'));
+  next();
+};
+
+module.exports = { authenticateUser, requireAdmin, requireCustomer };
