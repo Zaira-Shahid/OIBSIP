@@ -20,6 +20,11 @@ const authenticateUser = asyncHandler(async (req, res, next) => {
   const user = await User.findById(payload.sub);
   if (!user) throw new ApiError(401, 'Your session is no longer valid. Please log in again.');
 
+  // A password reset invalidates every token issued before it.
+  if (user.passwordChangedAt && payload.iat < Math.floor(user.passwordChangedAt.getTime() / 1000)) {
+    throw new ApiError(401, 'Your password was changed. Please log in again.');
+  }
+
   req.user = user;
   next();
 });

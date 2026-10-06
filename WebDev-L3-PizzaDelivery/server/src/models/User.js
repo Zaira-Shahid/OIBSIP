@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema(
     verificationTokenExpires: { type: Date, select: false },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetTokenExpires: { type: Date, select: false },
+    // JWTs issued before this moment are rejected (set when the password is reset).
+    passwordChangedAt: { type: Date },
   },
   {
     timestamps: true,
