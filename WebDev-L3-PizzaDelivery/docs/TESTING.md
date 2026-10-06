@@ -311,3 +311,43 @@ Not exercised in a browser: `npm run admin:reset-password` (covered by automated
 5. Optional: put a new `ADMIN_PASSWORD` in `.env`, run `cd server && npm run admin:reset-password`, and confirm the old password fails and the admin session in the browser is signed out.
 
 See also [DEMO-CHECKLIST.md](DEMO-CHECKLIST.md).
+
+## Module 9 - Inventory management (branch `module-9-inventory`)
+
+Automated: `cd server && npm test` runs 112 tests (96 earlier + 16 inventory). **112 of 112 pass.**
+
+| Check | Result |
+| ----- | ------ |
+| Status rule: 0 is out of stock, strictly below the threshold is low, equal to or above is OK | ✅ |
+| Inventory routes: no token 401, customer 403 (plus the router crawl from Module 8) | ✅ |
+| List returns every item (inactive included) grouped by category then name, with the expected fields | ✅ |
+| Summary counts low and out-of-stock for active items only | ✅ |
+| Set stock with `expectedStock`: saved, and the response is the updated item | ✅ |
+| Stock changed meanwhile: 409 `STOCK_CHANGED` with the current row, nothing saved | ✅ |
+| Five simultaneous sets from the same view: exactly one wins | ✅ |
+| `+10` / `+50` are atomic: ten simultaneous `+10` give exactly +100 | ✅ |
+| Adjustments cannot go below 0 or above 1,000,000 and change nothing when refused; exactly 0 is allowed | ✅ |
+| Ten simultaneous `-1` on a stock of 5: exactly five succeed, never negative | ✅ |
+| Threshold and active edits leave stock alone, and the status follows | ✅ |
+| Combined edit applies all fields together, or none when the stock check fails | ✅ |
+| 21 kinds of invalid input (missing `expectedStock`, negatives, decimals, strings, too large, `price`/`name`/`category`/`unit`/`role`, empty body, set + adjust together) rejected with 400, nothing changes | ✅ |
+| Unknown and malformed ids: 404 | ✅ |
+| Admin edits show up for customers (out of stock, hidden) and block orders larger than the stock (409) | ✅ |
+| **A3 end to end:** unpaid order changes no stock; after verified payment the admin view shows each of the 5 ingredients down by the quantity and an unrelated item unchanged | ✅ |
+| Client `npm run lint` (no warnings) and `npm run build` | ✅ |
+
+### Not yet verified (Module 9)
+
+- **The inventory screens in a browser** (dashboard counts, stock table, Save, +10/+50, Deactivate, error and refresh behaviour, phone layout). They compile and lint but have not been clicked through.
+- The 409 "stock changed meanwhile" flow in the UI (needs two windows or an order placed while the page is open).
+- The running dev API server needs a restart to serve `/api/admin/inventory`.
+
+### How to check Module 9 yourself
+
+1. Restart the API server, log in as admin (incognito window) and open the dashboard: the Inventory card shows low and out-of-stock counts.
+2. **Manage inventory**: four groups (bases, sauces, cheeses, vegetables) with stock, threshold and status. Check that status is readable without colour (✓ OK, ! Low stock, ✕ Out of stock).
+3. Type a new number under "Set stock to" and Save; the row updates. Try `-5`, `1.5` and letters: an inline error, Save disabled.
+4. Click **+10** and **+50**. Set a threshold above the stock: the badge becomes Low stock. Set stock 0: Out of stock; as a customer the builder shows that ingredient as out of stock.
+5. **Deactivate** an item: it disappears from the customer's builder and the row is marked hidden; **Activate** brings it back.
+6. **A3:** note a stock figure, pay for a pizza as a customer (test card), reload the admin page: each of that pizza's ingredients dropped by the quantity.
+7. **Concurrency (two windows):** load the inventory in two admin windows. Save a new stock in window A, then try to save a different number in window B without reloading: B shows the "changed to ..." message, refreshes that row, and saves nothing.

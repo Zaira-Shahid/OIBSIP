@@ -3,6 +3,7 @@ import AuthProvider from './context/AuthProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 import MainLayout from './layouts/MainLayout'
 import AdminDashboard from './pages/AdminDashboard'
+import AdminInventory from './pages/AdminInventory'
 import AdminLogin from './pages/AdminLogin'
 import AdminRoute from './components/AdminRoute'
 import Builder from './pages/Builder'
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="admin/login" element={<AdminLogin />} />
             <Route element={<AdminRoute />}>
               <Route path="admin/dashboard" element={<AdminDashboard />} />
+              <Route path="admin/inventory" element={<AdminInventory />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>

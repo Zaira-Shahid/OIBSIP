@@ -22,10 +22,10 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`, set to ORDER_RECEIVED on verified payment | `server/tests/payments.test.js` | 🚧 Received done; Kitchen/Delivery by admin in Modules 8/10 |
 | U12 | Real-time status on user dashboard       | 10                | -              | -    | ☐      |
 | A1  | Separate admin login                     | 8                 | `POST /api/admin/login`, `requireAdmin` on `/api/admin`, `AdminLogin`, `AdminRoute` | `server/tests/admin.test.js` | ✅ approved by Zaira |
-| A2  | Inventory dashboard                      | 9                 | -              | -    | ☐      |
-| A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | 🚧 implemented in Module 7; verify with the admin inventory view in Module 9 |
-| A4  | Manual stock update                      | 9                 | -              | -    | ☐      |
-| A5  | Configurable low-stock threshold         | 9, 10             | -              | -    | ☐      |
+| A2  | Inventory dashboard                      | 9                 | `GET /api/admin/inventory`, `AdminInventory`, `InventoryRow` | `server/tests/inventory.test.js` | 🚧 API tests pass; browser check pending |
+| A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | 🚧 implemented in Module 7; Module 9 test confirms a paid order shows as a decrement in the admin inventory view; browser check pending |
+| A4  | Manual stock update                      | 9                 | `PATCH /api/admin/inventory/:id`, `InventoryRow` | `server/tests/inventory.test.js` | 🚧 API tests pass; browser check pending |
+| A5  | Configurable low-stock threshold         | 9, 10             | Per-item `lowStockThreshold` editable in `PATCH /api/admin/inventory/:id`; `inventoryStatus` rule | `server/tests/inventory.test.js` | 🚧 threshold configurable (Module 9); scheduled email in Module 10 |
 | A6  | Scheduled low-stock email (node-cron)    | 10                | -              | -    | ☐      |
 | A7  | Admin order management                   | 8, 10             | `GET /api/admin/orders`, `PATCH /api/admin/orders/:id/status` | `server/tests/admin.test.js` | 🚧 API done in Module 8; admin screen and live tracking in Module 10 |
 
@@ -41,7 +41,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 6  | Order management                            | ✅ approved by Zaira (merged via PR #4) |
 | 7  | Razorpay payment                            | ✅ approved by Zaira |
 | 8  | Admin authentication & authorization        | ✅ approved by Zaira |
-| 9  | Inventory management                        | ☐ |
+| 9  | Inventory management                        | 🚧 built, tests pass; awaiting Zaira's browser check and "approved" |
 | 10 | Low-stock automation + real-time tracking   | ☐ |
 | 11 | Testing, UI polish & submission             | ☐ |
 
@@ -94,7 +94,17 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - `GET /api/admin/orders`: confirmed orders only, newest first, capped at 200, with customer name and email. `PATCH /api/admin/orders/:id/status`: forward only, one step at a time; skips, backwards moves, repeats, unknown statuses and orders without a status (unpaid or `needsRefund`) are rejected. The admin orders screen and user live tracking are Module 10.
 - Admin password change: `npm run admin:reset-password` (reads `ADMIN_EMAIL` / `ADMIN_PASSWORD`, admin accounts only, invalidates older admin tokens). No email-based admin reset.
 
+## Module 9 decisions (approved by Zaira)
+
+- Status rule (`inventoryStatus`): `OUT_OF_STOCK` at 0, `LOW` when stock is strictly below the item's own threshold, otherwise `OK`. The dashboard counts active items only.
+- Editable by admin: stock, low-stock threshold and active only. No price editing in the admin UI.
+- Setting an absolute stock must carry `expectedStock`; if the stock changed meanwhile the server answers 409 with the current item and the screen refreshes that row. The `+10` / `+50` restock buttons use an atomic `$inc` that cannot take stock below 0 (or above 1,000,000).
+- No audit trail; `updatedAt` is the only record of a change.
+- Dashboard overview shows low and out-of-stock counts. Orders overview and live statuses are Module 10.
+
 ## TODO
+
+- [ ] **Module 10:** the low-stock scheduler needs per-item alert state (no duplicate emails). When an item is restocked to `>=` its threshold (status back to OK), its alert state must reset so a later drop triggers a new email. Reuse `inventoryStatus` from `server/src/services/inventoryService.js` so the screen and the scheduler agree.
 
 - [ ] **Module 11:** add a Razorpay webhook (`payment.captured`) as a safety net for browsers that close before verify, and a screen or report for `needsRefund` orders.
 
