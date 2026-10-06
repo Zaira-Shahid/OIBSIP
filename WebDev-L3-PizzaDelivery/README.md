@@ -76,6 +76,11 @@ cd client && npm run dev      # http://localhost:5173
 ```
 The Vite dev server proxies `/api` to the backend. Check `http://localhost:5000/api/health`.
 
+## Troubleshooting
+
+- **`querySrv ECONNREFUSED` on startup** - Node's DNS resolver can fail the `mongodb+srv://` lookup on some networks (seen with Pakistani ISP DNS) even when the OS resolves it. The server detects this specific failure and retries once with Google/Cloudflare public DNS; networks that work normally never use the fallback. Alternatives: set your OS DNS to 8.8.8.8, or use Atlas's standard (non-SRV) `mongodb://` connection string.
+- **"Could not connect to any servers"** - add your IP under Atlas *Network Access*.
+
 ## Docs
 - [Requirements & traceability](docs/REQUIREMENTS.md)
 - [Testing notes](docs/TESTING.md)

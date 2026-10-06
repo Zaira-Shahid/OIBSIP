@@ -33,7 +33,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 
 | #  | Module                                      | Status |
 | -- | ------------------------------------------- | ------ |
-| 1  | Project foundation & architecture           | 🚧 see below |
+| 1  | Project foundation & architecture           | ✅ |
 | 2  | User authentication                         | ☐ |
 | 3  | Email verification & password recovery      | ☐ |
 | 4  | Pizza dashboard                             | ☐ |
@@ -51,10 +51,10 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | ----------------------------- | ------ |
 | Repository structure          | ✅ |
 | Client (React + Vite) builds  | ✅ |
-| Server starts                 | see TESTING.md |
-| MongoDB connection            | see TESTING.md |
-| `/api/health` endpoint        | see TESTING.md |
-| Frontend routing              | ✅ (verified in build; browser check in TESTING.md) |
+| Server starts                 | ✅ |
+| MongoDB connection (Atlas)    | ✅ |
+| `/api/health` endpoint        | ✅ |
+| Frontend routing              | ✅ (build + dev-server checks; see TESTING.md) |
 
 ## Decisions that refine the spec (approved by Zaira)
 

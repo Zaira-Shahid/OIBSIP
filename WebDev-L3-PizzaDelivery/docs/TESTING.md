@@ -17,10 +17,18 @@ Only results that were actually executed are recorded here.
 | SPA route fallback | `curl localhost:5173/some/route` | ✅ serves the app shell |
 | Security headers | helmet | ✅ `X-Content-Type-Options` present |
 
+| Real Atlas connection | `npm start` in server with Atlas URI | ✅ `MongoDB connected`, API listening on :5000 |
+| `GET /api/health` with DB up | curl localhost:5000/api/health | ✅ 200, `database: connected` |
+| Health via Vite proxy | curl localhost:5173/api/health | ✅ same 200 response |
+
 ### Not yet verified
 
-- **Real MongoDB connection and `GET /api/health` returning 200 / `database: connected`.** This needs the Atlas `MONGODB_URI` in `server/.env`. An attempt to use a temporary in-memory MongoDB for this was abandoned because its binary download stalled; no result is claimed. This check is run as soon as the URI is configured.
-- Visual check of the Home page in a browser (status pill states).
+- Visual check of the Home page status pill in a browser. The pill is driven by the proxied `/api/health` response above, but the page was not viewed in a browser.
+
+### Notes
+
+- On this machine Node's DNS resolver failed the Atlas `mongodb+srv` SRV lookup (`querySrv ECONNREFUSED`) although the OS resolved it. `server/src/config/db.js` retries with public DNS only after that failure. See README Troubleshooting.
+- Atlas Network Access currently allows `0.0.0.0/0` (development only; restrict before any deployment).
 
 ### How to run this check yourself
 
