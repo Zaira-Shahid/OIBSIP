@@ -216,3 +216,42 @@ Automated: `cd server && npm test` runs 62 tests (14 auth + 15 email flows + 9 m
 3. **Edit pizza** returns to the builder review with your choices kept.
 4. Click **Proceed to pay**: a "not confirmed yet" notice and a disabled "Payment coming next" button appear. In MongoDB a new order exists with `paymentStatus: PENDING` and no `orderStatus`, and no ingredient stock has changed.
 5. Open **My orders**: empty, because the order is unpaid.
+
+## Module 7 - Razorpay payment (branch `module-7-razorpay`)
+
+Automated: `cd server && npm test` runs 80 tests (62 earlier + 18 payments). **80 of 80 pass.** Payment tests use a **fake gateway** and override any Razorpay keys in `.env`; Razorpay is never contacted.
+
+| Check | Result |
+| ----- | ------ |
+| Payment endpoints need a login | ✅ |
+| Not configured: 503; live (`rzp_live_`) key refused; no gateway call | ✅ |
+| Start payment: gateway order = stored amount in paise, receipt = order id; no secret in the response | ✅ |
+| Other users, unknown and malformed order ids: 404 | ✅ |
+| Start payment re-checks stock (`INSUFFICIENT_STOCK` / `OUT_OF_STOCK`) and prices (`PRICE_CHANGED`) before contacting the gateway | ✅ |
+| Gateway failure: safe 502, no internals leaked, order retryable | ✅ |
+| Retry after closing the popup makes a fresh Razorpay order; the old one can no longer confirm | ✅ |
+| Forged or bad signatures rejected; nothing changes; the genuine payment still works afterwards | ✅ |
+| Valid signature: PAID, ORDER_RECEIVED, payment id stored, quantity taken from each of the 5 chosen ingredients only | ✅ |
+| Confirmed order appears in history | ✅ |
+| Repeated verify (3 more calls) and 5 simultaneous verifies decrement stock once | ✅ |
+| Stock gone after payment: PAID, no orderStatus, `needsRefund`, earlier decrements rolled back, never negative, repeat verify changes nothing, cannot pay again | ✅ |
+| Stock may reach exactly 0 but not below | ✅ |
+| Paid order cannot start another payment (409 `ALREADY_PAID`) | ✅ |
+| Verify rejects unknown fields and bad bodies | ✅ |
+| `stockDeducted` hidden from API responses (caught by the existing "no stock fields" test) | ✅ |
+| Client `npm run lint` (no warnings) and `npm run build` | ✅ |
+
+### Not yet verified (Module 7)
+
+- **A real Razorpay test-mode checkout.** Needs `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` in `server/.env`. The real Razorpay HTTP call (`POST /v1/orders`) and the real Checkout popup have not been exercised. Only the fake gateway and the signature algorithm (HMAC-SHA256 of `order_id|payment_id`, as Razorpay documents it) are tested.
+- **The new pay flow in a browser** (popup, closing it, retry, success redirect, error messages).
+- Refunds for `needsRefund` orders are manual and untested against Razorpay.
+
+### How to check Module 7 yourself
+
+1. Put your `rzp_test_` key id and secret in `server/.env` and restart the API server.
+2. Build a pizza, open the summary and click **Proceed to pay**. Razorpay Checkout opens and the order exists unpaid.
+3. Close the popup: a "nothing was charged" notice appears and **Pay now** works again (fresh Razorpay order).
+4. Pay with the test card `4111 1111 1111 1111` (any future expiry, any CVV). You land on the order detail with "Payment successful", and **My orders** lists it as Order Received.
+5. In MongoDB (or later the admin view), each ingredient of that pizza has dropped by the quantity, and the order has `paymentStatus: PAID` and `orderStatus: ORDER_RECEIVED`.
+6. Try a failing test payment (Razorpay's test-mode failure option) and confirm you can retry.

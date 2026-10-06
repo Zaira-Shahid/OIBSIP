@@ -67,7 +67,7 @@ Fill in `server/.env`. Never commit this file. Variables:
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Module 2 | Used only by `npm run seed:admin` |
 | `CLIENT_URL` | Module 1 | CORS origin / email links (default `http://localhost:5173`) |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM` | Module 3 | Gmail SMTP (App Password). If `EMAIL_USER`/`EMAIL_PASSWORD` are empty and `NODE_ENV=development`, emails are printed to the server console instead of sent |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Module 7 | Razorpay **test** keys |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Module 7 | Razorpay **test** keys only (`rzp_test_...`; live keys are refused). Until both are set, paying returns "Online payments are not configured yet" |
 
 ### Create the admin account
 Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `server/.env`, then:
@@ -98,7 +98,18 @@ The Vite dev server proxies `/api` to the backend. Check `http://localhost:5000/
 ```bash
 cd server && npm test
 ```
-Runs against a separate `pizza-delivery-test` database and cleans up after itself.
+Runs against a separate `pizza-delivery-test` database and cleans up after itself. Payment tests use a fake Razorpay gateway and override any keys in `.env`, so they never contact Razorpay.
+
+## Payments (Razorpay test mode)
+1. "Proceed to pay" creates an unpaid order; the server then creates a Razorpay order for the stored amount (in paise) and the browser opens Razorpay Checkout.
+2. After payment the browser sends the three checkout values to `POST /api/payments/verify`. The server checks the signature, moves the order to `PAID`, takes the stock (`stock >= quantity` for each ingredient, atomically, all-or-nothing) and only then sets the status to Order Received. A repeated verify never takes stock twice.
+3. Closing the checkout window leaves the order unpaid; paying again creates a fresh Razorpay order.
+4. Test card: `4111 1111 1111 1111`, any future expiry, any CVV, any name (see Razorpay's test-mode docs for UPI/netbanking test values).
+
+### Known limitations
+- **Paid but out of stock (rare race).** If an ingredient runs out between the payment-start check and a successful payment, stock cannot be taken. The order stays `paymentStatus: PAID` with **no** order status, `needsRefund: true` is set, and the customer is shown a clear message that they will be refunded. The refund itself is **manual** (Razorpay dashboard); there is no admin screen for these orders yet.
+- **No webhook.** Confirmation relies on the browser returning from checkout. If the browser closes after paying but before verify, the payment is not auto-confirmed. A Razorpay webhook is planned for Module 11.
+- Abandoned unpaid orders are kept (they never show in order history).
 
 ## Docs
 - [Requirements & traceability](docs/REQUIREMENTS.md)

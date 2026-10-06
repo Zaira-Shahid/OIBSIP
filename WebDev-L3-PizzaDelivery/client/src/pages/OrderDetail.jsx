@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import PizzaBreakdown from '../components/PizzaBreakdown'
 import { getErrorMessage } from '../services/api'
 import { fetchOrder } from '../services/orderService'
@@ -8,6 +8,7 @@ import { orderItems } from '../utils/order'
 
 export default function OrderDetail() {
   const { id } = useParams()
+  const justPaid = Boolean(useLocation().state?.justPaid)
   const [state, setState] = useState({ id: '', status: 'loading', order: null, error: '' })
 
   useEffect(() => {
@@ -38,6 +39,11 @@ export default function OrderDetail() {
 
       {current.status === 'ready' && (
         <div className="card builder__panel">
+          {justPaid && (
+            <p className="notice card" role="status">
+              <strong>Payment successful.</strong> Your order is confirmed and the kitchen has it.
+            </p>
+          )}
           <p>
             <strong>{ORDER_STATUS_LABELS[order.orderStatus]}</strong>
             <span className="field__hint"> · placed {formatDateTime(order.createdAt)}</span>
