@@ -128,3 +128,18 @@ a { color: var(--c-primary); }
 .summary__price, .summary__none { color: var(--c-muted); }
 .summary__total { display: flex; justify-content: space-between; font-size: 1.2rem; padding: 14px 0 0; }
 .link-btn { background: none; border: 0; color: var(--c-primary); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 0; flex: none; }
+
+/* Orders */
+.breakdown { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }
+.breakdown th, .breakdown td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--c-border); vertical-align: top; }
+.breakdown thead th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-muted); }
+.breakdown tbody th { width: 110px; }
+.breakdown .breakdown__num { text-align: right; white-space: nowrap; }
+.breakdown tfoot th { font-weight: 600; }
+.breakdown__total th, .breakdown__total td { font-size: 1.2rem; font-weight: 800; border-bottom: 0; border-top: 2px solid var(--c-text); }
+.qty { max-width: 140px; }
+.qty select { width: 100%; padding: 10px 12px; border: 1px solid var(--c-border); border-radius: 8px; font: inherit; background: #fff; color: var(--c-text); }
+.notice.card { background: #fff7e0; border-color: var(--c-accent); padding: 12px 16px; margin-top: 8px; }
+.order-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.order-list__item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 20px; }
+.order-list__side { text-align: right; display: flex; flex-direction: column; gap: 4px; }

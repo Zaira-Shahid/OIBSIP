@@ -15,6 +15,7 @@ export default function Navbar() {
           {!loading && isAuthenticated && (
             <>
               <NavLink to="/dashboard" className="nav-link">Dashboard</NavLink>
+              <NavLink to="/orders" className="nav-link">My orders</NavLink>
               <span className="nav-user">Hi, {user.name.split(' ')[0]}</span>
               <button type="button" className="btn btn--ghost" onClick={logout}>Log out</button>
             </>

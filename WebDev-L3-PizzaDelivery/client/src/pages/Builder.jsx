@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import OptionGroup from '../components/OptionGroup'
 import { getErrorMessage } from '../services/api'
 import { fetchCustomPizzaPrice, fetchIngredients } from '../services/pizzaService'
@@ -33,8 +33,11 @@ const optionsFor = (ingredients, key) => ingredients[key === 'vegetables' ? 'veg
 export default function Builder() {
   const [load, setLoad] = useState({ status: 'loading', ingredients: null, error: '' })
   const [attempt, setAttempt] = useState(0)
-  const [step, setStep] = useState(0)
-  const [selection, setSelection] = useState(EMPTY)
+  // Coming back from the order summary restores the pizza and opens the review step.
+  const returned = useLocation().state?.selection
+  const navigate = useNavigate()
+  const [step, setStep] = useState(returned ? SUMMARY : 0)
+  const [selection, setSelection] = useState(returned ?? EMPTY)
   const [error, setError] = useState('')
   const [priceResult, setPrice] = useState({ key: '', status: 'loading', total: null, error: '' })
   const headingRef = useRef(null)
@@ -215,12 +218,16 @@ export default function Builder() {
               {step === SUMMARY - 1 ? 'Review pizza' : 'Next'}
             </button>
           ) : (
-            <button type="button" className="btn" disabled title="Ordering and payment arrive in the next modules.">
-              Place order
+            <button
+              type="button"
+              className="btn"
+              disabled={price.status !== 'ready'}
+              onClick={() => navigate('/order-summary', { state: { selection } })}
+            >
+              Continue to summary
             </button>
           )}
         </div>
-        {step === SUMMARY && <p className="field__hint builder__note">Ordering and payment arrive in the next modules.</p>}
       </div>
 
       {step < SUMMARY && (
