@@ -19,15 +19,15 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | U8  | Multiple vegetable selection             | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U9  | Order summary                            | 6                 | `OrderSummary`, `PizzaBreakdown`, `POST /api/orders` | `server/tests/orders.test.js` | ✅ API tests pass; browser check done by Zaira |
 | U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | ✅ approved by Zaira (real test-mode checkout verified) |
-| U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`; ORDER_RECEIVED on verified payment, then forward-only admin updates (`AdminOrders`) | `server/tests/payments.test.js`, `admin.test.js`, `tracking.test.js` | 🚧 tests pass; browser check pending |
-| U12 | Real-time status on user dashboard       | 10                | `usePolling` (5 s), `Orders`, `OrderDetail`, `OrderTracker` | `server/tests/tracking.test.js` (API side) | 🚧 API tests pass; browser check pending |
+| U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`; ORDER_RECEIVED on verified payment, then forward-only admin updates (`AdminOrders`) | `server/tests/payments.test.js`, `admin.test.js`, `tracking.test.js` | ✅ approved by Zaira (browser-verified) |
+| U12 | Real-time status on user dashboard       | 10                | `usePolling` (5 s), `Orders`, `OrderDetail`, `OrderTracker` | `server/tests/tracking.test.js` (API side) | ✅ approved by Zaira (browser-verified) |
 | A1  | Separate admin login                     | 8                 | `POST /api/admin/login`, `requireAdmin` on `/api/admin`, `AdminLogin`, `AdminRoute` | `server/tests/admin.test.js` | ✅ approved by Zaira |
 | A2  | Inventory dashboard                      | 9                 | `GET /api/admin/inventory`, `AdminInventory`, `InventoryRow` | `server/tests/inventory.test.js` | ✅ approved by Zaira |
 | A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | ✅ implemented in Module 7; verified end to end in the browser by Zaira (a paid order lowered stock by the ordered quantity) |
 | A4  | Manual stock update                      | 9                 | `PATCH /api/admin/inventory/:id`, `InventoryRow` | `server/tests/inventory.test.js` | ✅ approved by Zaira |
-| A5  | Configurable low-stock threshold         | 9, 10             | Per-item `lowStockThreshold` editable in `PATCH /api/admin/inventory/:id`; `inventoryStatus` rule | `server/tests/inventory.test.js` | 🚧 per-item threshold (Module 9) and alert state/reset (Module 10); browser/email check pending |
-| A6  | Scheduled low-stock email (node-cron)    | 10                | `lowStockService` (`runLowStockCheck`, `startLowStockScheduler`), `sendLowStockDigest`, `POST /api/admin/inventory/check-low-stock` | `server/tests/lowstock.test.js` | 🚧 fake-mail tests pass; real email and cron run pending |
-| A7  | Admin order management                   | 8, 10             | `GET /api/admin/orders`, `PATCH /api/admin/orders/:id/status`, `AdminOrders` | `server/tests/admin.test.js`, `tracking.test.js` | 🚧 API done in Module 8; screen built in Module 10, browser check pending |
+| A5  | Configurable low-stock threshold         | 9, 10             | Per-item `lowStockThreshold` editable in `PATCH /api/admin/inventory/:id`; `inventoryStatus` rule | `server/tests/inventory.test.js` | ✅ approved by Zaira (threshold in Module 9; alert state and reset in Module 10, verified with a real email) |
+| A6  | Scheduled low-stock email (node-cron)    | 10                | `lowStockService` (`runLowStockCheck`, `startLowStockScheduler`), `sendLowStockDigest`, `POST /api/admin/inventory/check-low-stock` | `server/tests/lowstock.test.js` | ✅ approved by Zaira (real Gmail digest and 1-minute cron verified) |
+| A7  | Admin order management                   | 8, 10             | `GET /api/admin/orders`, `PATCH /api/admin/orders/:id/status`, `AdminOrders` | `server/tests/admin.test.js`, `tracking.test.js` | ✅ approved by Zaira (browser-verified) |
 
 ## Module progress
 
@@ -42,7 +42,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | 7  | Razorpay payment                            | ✅ approved by Zaira |
 | 8  | Admin authentication & authorization        | ✅ approved by Zaira |
 | 9  | Inventory management                        | ✅ approved by Zaira |
-| 10 | Low-stock automation + real-time tracking   | 🚧 built, tests pass; awaiting Zaira's browser/email check and "approved" |
+| 10 | Low-stock automation + real-time tracking   | ✅ approved by Zaira |
 | 11 | Testing, UI polish & submission             | ☐ |
 
 ### Module 1 foundation checklist (spec Phase 1)
@@ -113,6 +113,8 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - Admin orders screen shows only the one legal next step as a button; the server still enforces it.
 
 ## TODO
+
+- [ ] **Module 11 (note):** `npm audit` in `server` reports 3 high-severity findings, all in the dev-only chain `nodemon` -> `chokidar` -> `braces` (stack-exhaustion DoS on deeply nested glob patterns). They are not in production dependencies (the client reports 0). The only offered fix downgrades nodemon to 1.14.10, which is not safe; revisit when nodemon ships a fixed chokidar.
 
 
 - [ ] **Module 11:** add a Razorpay webhook (`payment.captured`) as a safety net for browsers that close before verify, and a screen or report for `needsRefund` orders.
