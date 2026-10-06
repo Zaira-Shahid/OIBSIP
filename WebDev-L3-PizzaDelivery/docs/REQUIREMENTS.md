@@ -35,7 +35,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | -- | ------------------------------------------- | ------ |
 | 1  | Project foundation & architecture           | ✅ |
 | 2  | User authentication                         | ✅ approved by Zaira (U1/U2 stay 🚧 until Module 3) |
-| 3  | Email verification & password recovery      | 🚧 branch `module-3-email-verification`, awaiting real-email + browser check |
+| 3  | Email verification & password recovery      | ✅ approved by Zaira (real-inbox check not run by Claude; U1–U3 stay 🚧 until that is done) |
 | 4  | Pizza dashboard                             | ☐ |
 | 5  | Custom pizza builder                        | ☐ |
 | 6  | Order management                            | ☐ |
