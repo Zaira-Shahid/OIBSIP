@@ -2,6 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env'), quiet: true });
 
 const nodeEnv = process.env.NODE_ENV || 'development';
+const DEFAULT_LOW_STOCK_CRON = '*/15 * * * *';
 
 const env = {
   nodeEnv,
@@ -25,6 +26,9 @@ const env = {
     keyId: (process.env.RAZORPAY_KEY_ID || '').trim(),
     keySecret: (process.env.RAZORPAY_KEY_SECRET || '').trim(),
   },
+  // Low-stock scheduler (spec section 13). Alerts go to ADMIN_ALERT_EMAIL, falling back to ADMIN_EMAIL.
+  lowStockCron: (process.env.LOW_STOCK_CHECK_CRON || DEFAULT_LOW_STOCK_CRON).trim(),
+  alertEmail: (process.env.ADMIN_ALERT_EMAIL || process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
   adminEmail: (process.env.ADMIN_EMAIL || '').trim().toLowerCase(),
   adminPassword: process.env.ADMIN_PASSWORD || '',
 };
@@ -49,4 +53,4 @@ function assertEnv() {
   }
 }
 
-module.exports = { env, assertEnv };
+module.exports = { env, assertEnv, DEFAULT_LOW_STOCK_CRON };

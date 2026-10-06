@@ -3,6 +3,7 @@ const InventoryItem = require('../models/InventoryItem');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { MAX_STOCK, toAdminItem, categoryRank } = require('../services/inventoryService');
+const { runLowStockCheck, reconcileAlertState } = require('../services/lowStockService');
 
 // Every item (including inactive ones), grouped by category order then name. The summary counts active items only,
 // because inactive items are not sold and never trigger alerts.
@@ -46,7 +47,11 @@ exports.updateInventoryItem = asyncHandler(async (req, res) => {
   if (Object.keys(update.$set).length === 0) delete update.$set;
 
   const updated = await InventoryItem.findOneAndUpdate(filter, update, { returnDocument: 'after', runValidators: true });
-  if (updated) return res.json({ success: true, data: { item: toAdminItem(updated) } });
+  if (updated) {
+    // A restock (or lower threshold) must reset the alert state now, not at the next scheduler run.
+    await reconcileAlertState(updated._id);
+    return res.json({ success: true, data: { item: toAdminItem(updated) } });
+  }
 
   // Nothing matched: either the item does not exist, or its stock is not what the admin expected.
   const current = await InventoryItem.findById(req.params.id);
@@ -63,4 +68,15 @@ exports.updateInventoryItem = asyncHandler(async (req, res) => {
     code: adjustBy !== undefined ? 'ADJUSTMENT_REJECTED' : 'STOCK_CHANGED',
     data: { item: toAdminItem(current) }, // lets the screen refresh just this row
   });
+});
+
+// Demo helper: the same job the scheduler runs, with the same duplicate rules, so it cannot be used to spam.
+exports.checkLowStock = asyncHandler(async (req, res) => {
+  const result = await runLowStockCheck();
+  if (result.skipped === 'ALREADY_RUNNING') throw new ApiError(409, 'A low-stock check is already running. Try again in a moment.', 'CHECK_RUNNING');
+  if (result.skipped === 'NO_RECIPIENT') {
+    throw new ApiError(409, 'No alert address is configured. Set ADMIN_ALERT_EMAIL (or ADMIN_EMAIL) in server/.env.', 'NO_RECIPIENT');
+  }
+  if (result.failed) throw new ApiError(502, 'The alert email could not be sent. It will be retried on the next check.', 'EMAIL_FAILED');
+  res.json({ success: true, data: { checked: result.checked, alerted: result.alerted } });
 });
