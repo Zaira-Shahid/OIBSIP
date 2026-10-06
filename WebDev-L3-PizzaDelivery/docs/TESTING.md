@@ -382,12 +382,18 @@ Automated: `cd server && npm test` runs 139 tests (112 earlier + 24 low-stock + 
 | Customer sees each admin status change on the next fetch (detail and list); only the owner sees it; a new paid order appears in the admin list on the next fetch | ✅ |
 | Client `npm run lint` (no warnings) and `npm run build` | ✅ |
 
-### Not yet verified (Module 10)
+### Browser and email check (Module 10) - done by Zaira
 
-- **A real low-stock email delivered by Gmail SMTP**, and the real cron firing on schedule. Only the fake transport and a fake cron were exercised; the real `node-cron` was only checked for accepting the expressions.
-- **The new screens in a browser:** admin Orders, status buttons, the customer's live tracker and My orders updating by themselves, the dashboard counts, and the "Run low-stock check now" button.
-- **Polling behaviour** (pause when the tab is hidden, refresh when visible, stop on leaving the page, the "Reconnecting" hint). It compiles and lints; the client has no test runner.
-- The running dev API server must be restarted to get the new routes and to start the scheduler.
+| Check | Result |
+| ----- | ------ |
+| Live tracking: admin moved an order Received → In Kitchen → Sent to Delivery and the customer page updated each time without a reload | ✅ |
+| Admin Orders screen shows new paid orders and only the legal next-step button | ✅ |
+| Scheduler ran every minute (`LOW_STOCK_CHECK_CRON` = 1 minute) | ✅ |
+| One digest email arrived in Gmail; no repeat on later runs | ✅ |
+| "Run low-stock check now" reported no new items after the alert | ✅ |
+| Restock and drop again sent a new email | ✅ |
+
+Not exercised in a browser: hiding the tab and returning (pause and refresh), the "Reconnecting" hint, the LOW → OUT_OF_STOCK escalation email with real mail, and the phone layout of the new screens.
 
 ### How to check Module 10 yourself
 
