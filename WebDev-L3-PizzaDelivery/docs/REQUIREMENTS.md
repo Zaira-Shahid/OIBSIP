@@ -9,9 +9,9 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 
 | ID  | Requirement                              | Module            | Implementation | Test | Status |
 | --- | ---------------------------------------- | ----------------- | -------------- | ---- | ------ |
-| U1  | User registration + email verification   | 2, 3              | Registration: `auth.controller`, Register page | `server/tests/auth.test.js` | 🚧 registration done; verification email in Module 3 |
-| U2  | JWT login                                | 2                 | `auth.controller`, `authenticateUser`, Login page | `server/tests/auth.test.js` | 🚧 works; stays 🚧 until Module 3 makes verified-only login real |
-| U3  | Forgot password + email reset link       | 3                 | `forgotPassword`/`resetPassword`, `emailService`, ForgotPassword/ResetPassword pages | `server/tests/email-flows.test.js` | 🚧 API + tests pass; real inbox + browser check pending |
+| U1  | User registration + email verification   | 2, 3              | Registration: `auth.controller`, Register page | `server/tests/auth.test.js` | ✅ approved by Zaira (real-inbox check passed) |
+| U2  | JWT login                                | 2                 | `auth.controller`, `authenticateUser`, Login page | `server/tests/auth.test.js` | ✅ approved by Zaira (real-inbox check passed) |
+| U3  | Forgot password + email reset link       | 3                 | `forgotPassword`/`resetPassword`, `emailService`, ForgotPassword/ResetPassword pages | `server/tests/email-flows.test.js` | ✅ approved by Zaira (real-inbox check passed) |
 | U4  | Pizza dashboard                          | 4                 | `Dashboard`, `PizzaCard`, `pizza.controller` | `server/tests/menu.test.js` | ✅ API tests pass; browser check done by Zaira |
 | U5  | At least 5 pizza bases                   | 4, 5              | `InventoryItem` (category `base`), `seed:menu`, `GET /api/ingredients` | `server/tests/menu.test.js`, `builder.test.js` | ✅ approved by Zaira |
 | U6  | At least 5 sauces                        | 4, 5              | `InventoryItem` (category `sauce`), `seed:menu`, `GET /api/ingredients` | `server/tests/menu.test.js`, `builder.test.js` | ✅ approved by Zaira |
@@ -34,16 +34,16 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | #  | Module                                      | Status |
 | -- | ------------------------------------------- | ------ |
 | 1  | Project foundation & architecture           | ✅ |
-| 2  | User authentication                         | ✅ approved by Zaira (U1/U2 stay 🚧 until Module 3) |
-| 3  | Email verification & password recovery      | ✅ approved by Zaira (real-inbox check not run by Claude; U1–U3 stay 🚧 until that is done) |
-| 4  | Pizza dashboard                             | ✅ approved by Zaira (U5/U6 stay 🚧 until the Module 5 builder shows them) |
+| 2  | User authentication                         | ✅ approved by Zaira |
+| 3  | Email verification & password recovery      | ✅ approved by Zaira (real-inbox check passed in Module 11) |
+| 4  | Pizza dashboard                             | ✅ approved by Zaira |
 | 5  | Custom pizza builder                        | ✅ approved by Zaira |
 | 6  | Order management                            | ✅ approved by Zaira (merged via PR #4) |
 | 7  | Razorpay payment                            | ✅ approved by Zaira |
 | 8  | Admin authentication & authorization        | ✅ approved by Zaira |
 | 9  | Inventory management                        | ✅ approved by Zaira |
 | 10 | Low-stock automation + real-time tracking   | ✅ approved by Zaira |
-| 11 | Testing, UI polish & submission             | ☐ |
+| 11 | Testing, UI polish & submission             | 🚧 built, audited, tests pass; awaiting Zaira's browser/console/responsive check, screenshots and "approved" |
 
 ### Module 1 foundation checklist (spec Phase 1)
 
@@ -119,17 +119,16 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - **Unpaid orders** are deleted 24 hours after creation by a partial TTL index (`PENDING`/`FAILED` only); paid orders are never deleted.
 - **Refunds:** the admin Orders screen lists paid-but-unconfirmed orders (customer, amount, Razorpay payment id) and lets the admin mark each one refunded after refunding it in the Razorpay dashboard.
 - **No webhook:** kept as a documented limitation.
+- **`AUTH_REQUIRE_VERIFIED` removed** after the real-inbox check of U1-U3 passed: email verification is always required for customer login.
 - **Optional deployment guide** (Vercel + Render + Atlas) added to the README; nothing is deployed.
 
 ## TODO
 
-- [ ] **Module 11:** after Zaira's real-inbox check of U1-U3, remove the temporary `AUTH_REQUIRE_VERIFIED` setting and adjust the tests.
 
 - [ ] **Module 11 (note):** `npm audit` in `server` reports 3 high-severity findings, all in the dev-only chain `nodemon` -> `chokidar` -> `braces` (stack-exhaustion DoS on deeply nested glob patterns). They are not in production dependencies (the client reports 0). The only offered fix downgrades nodemon to 1.14.10, which is not safe; revisit when nodemon ships a fixed chokidar.
 
 
 
-- [ ] **After Module 3 is verified:** remove the temporary `AUTH_REQUIRE_VERIFIED` setting (or keep it hard-coded to `true`). It exists only so unverified users can log in during development; it is already ignored in production.
 - [ ] Restrict Atlas Network Access (currently `0.0.0.0/0`) before any deployment.
 
 ## Module 2 decisions (approved by Zaira)

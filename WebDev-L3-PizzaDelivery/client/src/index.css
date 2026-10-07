@@ -29,7 +29,7 @@ a { color: var(--c-primary); }
 .main { flex: 1; padding-top: 32px; padding-bottom: 32px; }
 
 .navbar { background: var(--c-surface); border-bottom: 1px solid var(--c-border); position: sticky; top: 0; z-index: 10; }
-.navbar__inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.navbar__inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; min-height: 64px; padding-top: 6px; padding-bottom: 6px; }
 .brand { font-weight: 800; font-size: 1.25rem; text-decoration: none; color: var(--c-primary); }
 .nav-link { text-decoration: none; color: var(--c-muted); font-weight: 600; padding: 8px 12px; border-radius: 8px; }
 .nav-link.active, .nav-link:hover { color: var(--c-primary); background: #fdf0ec; }
@@ -199,3 +199,18 @@ a { color: var(--c-primary); }
 .admin-refunds h2 { margin: 0 0 4px; font-size: 1.15rem; }
 .admin-refunds .order-list { margin-top: 12px; }
 .admin-order__confirm { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Final polish: skip link, landing page, error screen */
+.skip-link { position: absolute; left: 8px; top: -48px; z-index: 20; background: var(--c-text); color: #fff; padding: 10px 16px; border-radius: 8px; font-weight: 700; text-decoration: none; }
+.skip-link:focus { top: 8px; }
+.main:focus { outline: none; }
+.hero__actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 0 0 24px; }
+.hero .status { margin-top: 8px; }
+.how { padding-bottom: 16px; }
+.how h2 { text-align: center; margin: 0 0 16px; }
+.how__steps { list-style: none; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); padding: 0; margin: 0; }
+.how__step { text-align: center; }
+.how__step h3 { margin: 8px 0 4px; }
+.how__step p { margin: 0; color: var(--c-muted); }
+.how__num { display: inline-flex; width: 36px; height: 36px; border-radius: 50%; align-items: center; justify-content: center; background: var(--c-primary); color: #fff; font-weight: 800; }
+@media (max-width: 480px) { .nav { justify-content: flex-start; } .container { padding: 0 12px; } }
