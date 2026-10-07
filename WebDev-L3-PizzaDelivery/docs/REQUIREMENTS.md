@@ -67,7 +67,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - Exactly one base, one sauce and one cheese are required; vegetables are optional and multiple.
 - `POST /api/pizzas/price` takes ingredient ids only and returns the total computed from database prices. A client-sent price/total is rejected. Order creation (Modules 6/7) must call `priceCustomPizza` (`server/src/services/pricingService.js`) again and never trust a client total.
 - Out-of-stock or inactive ingredients are rejected by the price endpoint (409 `OUT_OF_STOCK` / 400).
-- Preset pre-selection (`defaultIngredients` on Pizza) is lower priority and not built yet; "Customize" currently opens the same empty builder.
+- Preset pre-selection was deferred from Module 5 and built in Module 11 (see below).
 
 ## Module 6 decisions (approved by Zaira)
 
@@ -112,15 +112,23 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - Real-time = polling (spec 5.1): 5 s for customers (My orders, Order details), 10 s for admin (orders, dashboard). Polling pauses when the tab is hidden, refreshes when it becomes visible, never overlaps, and stops on unmount. A failed poll keeps the last data and shows "Reconnecting".
 - Admin orders screen shows only the one legal next step as a button; the server still enforces it.
 
+## Module 11 decisions (approved by Zaira)
+
+- **Presets:** each preset stores `defaultIngredients`; "Customize" opens the builder with them pre-selected (anything out of stock is left unselected with a note). The price on a card is the server-computed sum of those ingredients, so it equals what the builder charges. A preset whose ingredients are missing or inactive is hidden instead of showing a wrong price.
+- **Realistic prices:** ingredient prices were rebalanced so presets cost about ₹245-360. `seed:menu` moves an existing record to a new price only if it still has the old seeded price, upgrades old presets only while they are exactly as the old seed wrote them, and stays idempotent. "Pepperoni Feast" (no pepperoni exists in the builder) became "Mushroom Melt" and "Paneer" was added as a vegetable-category ingredient, so every preset can really be built.
+- **Unpaid orders** are deleted 24 hours after creation by a partial TTL index (`PENDING`/`FAILED` only); paid orders are never deleted.
+- **Refunds:** the admin Orders screen lists paid-but-unconfirmed orders (customer, amount, Razorpay payment id) and lets the admin mark each one refunded after refunding it in the Razorpay dashboard.
+- **No webhook:** kept as a documented limitation.
+- **Optional deployment guide** (Vercel + Render + Atlas) added to the README; nothing is deployed.
+
 ## TODO
+
+- [ ] **Module 11:** after Zaira's real-inbox check of U1-U3, remove the temporary `AUTH_REQUIRE_VERIFIED` setting and adjust the tests.
 
 - [ ] **Module 11 (note):** `npm audit` in `server` reports 3 high-severity findings, all in the dev-only chain `nodemon` -> `chokidar` -> `braces` (stack-exhaustion DoS on deeply nested glob patterns). They are not in production dependencies (the client reports 0). The only offered fix downgrades nodemon to 1.14.10, which is not safe; revisit when nodemon ships a fixed chokidar.
 
 
-- [ ] **Module 11:** add a Razorpay webhook (`payment.captured`) as a safety net for browsers that close before verify, and a screen or report for `needsRefund` orders.
 
-- [ ] **After Module 7:** preset pizza pre-select. Decide how a preset's listed price relates to the builder's ingredient-sum price (Margherita is listed at ₹249 but its ingredients sum to about ₹140). If a `defaultIngredients` field is added to Pizza, keep `seed:menu` idempotent and update existing dev records safely. "Customize" currently opens an empty builder for every pizza.
-- [ ] Unpaid orders left behind (user abandons payment) are kept and hidden from history; decide on a cleanup or expiry (Module 11).
 - [ ] **After Module 3 is verified:** remove the temporary `AUTH_REQUIRE_VERIFIED` setting (or keep it hard-coded to `true`). It exists only so unverified users can log in during development; it is already ignored in production.
 - [ ] Restrict Atlas Network Access (currently `0.0.0.0/0`) before any deployment.
 

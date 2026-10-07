@@ -332,3 +332,73 @@ test('admin:reset-password updates only that admin, applies the password rule an
   assert.equal(empty.status, 1);
   assert.match(empty.stderr, /ADMIN_EMAIL/);
 });
+
+// ---- Paid-but-unconfirmed orders that need a manual refund ----
+
+const awaitingRefund = (user, extra = {}) =>
+  makeOrder(user, { orderStatus: undefined, needsRefund: true, paymentReference: 'pay_refund_1', paidAt: new Date(), ...extra });
+const markRefunded = (id, token = admin.token) => call('POST', `/api/admin/orders/${id}/mark-refunded`, { token });
+const refundList = async () => (await call('GET', '/api/admin/orders/refunds', { token: admin.token })).json.data.orders;
+
+test('refund list: only paid orders that could not be confirmed, newest payment first, with customer and payment id', async () => {
+  const older = await awaitingRefund(alice.user, { paymentReference: 'pay_old', paidAt: new Date(Date.now() - 60000) });
+  const newer = await awaitingRefund(bob.user, { paymentReference: 'pay_new' });
+  await makeOrder(alice.user); // confirmed: not a refund case
+  await makeOrder(alice.user, { paymentStatus: 'PENDING', orderStatus: undefined }); // unpaid
+
+  const res = await call('GET', '/api/admin/orders/refunds', { token: admin.token });
+  assert.equal(res.status, 200);
+  const { orders } = res.json.data;
+  assert.deepEqual(orders.map((o) => o.id), [newer.id, older.id]);
+  assert.deepEqual(orders[0].customer, { name: 'bob', email: 'bob@admin-test.invalid' });
+  assert.equal(orders[0].paymentReference, 'pay_new');
+  assert.equal(orders[0].amount, 300);
+  assert.equal(orders[0].userId, undefined);
+  assert.ok(orders[0].paidAt);
+  // These orders stay out of the normal order list and out of the customer's history.
+  assert.ok(!(await call('GET', '/api/admin/orders', { token: admin.token })).json.data.orders.some((o) => o.id === newer.id));
+});
+
+test('refund routes are admin-only', async () => {
+  const order = await awaitingRefund(alice.user);
+  assert.equal((await call('GET', '/api/admin/orders/refunds', { token: alice.token })).status, 403);
+  assert.equal((await call('GET', '/api/admin/orders/refunds', {})).status, 401);
+  assert.equal((await markRefunded(order.id, alice.token)).status, 403);
+  assert.equal((await markRefunded(order.id, '')).status, 401);
+  assert.equal((await Order.findById(order.id)).needsRefund, true);
+});
+
+test('marking an order refunded takes it off the list, once, and leaves it hidden from the customer', async () => {
+  const order = await awaitingRefund(alice.user);
+  const res = await markRefunded(order.id);
+  assert.equal(res.status, 200);
+  assert.equal(res.json.data.order.needsRefund, false);
+  assert.ok(res.json.data.order.refundedAt);
+  assert.deepEqual(await refundList(), []);
+  assert.equal((await Order.findById(order.id)).paymentStatus, 'PAID'); // the record is kept
+
+  const again = await markRefunded(order.id);
+  assert.equal(again.status, 409);
+  assert.equal(again.json.code, 'NOT_AWAITING_REFUND');
+  assert.deepEqual((await call('GET', '/api/orders', { token: alice.token })).json.data.orders, []);
+});
+
+test('only orders awaiting a refund can be marked: confirmed, unpaid, unknown and malformed ids are refused', async () => {
+  const confirmed = await makeOrder(alice.user);
+  const unpaid = await makeOrder(alice.user, { paymentStatus: 'PENDING', orderStatus: undefined });
+  for (const order of [confirmed, unpaid]) {
+    const res = await markRefunded(order.id);
+    assert.equal(res.status, 409);
+    assert.equal(res.json.code, 'NOT_AWAITING_REFUND');
+  }
+  assert.equal((await Order.findById(confirmed.id)).orderStatus, 'ORDER_RECEIVED');
+  assert.equal((await markRefunded(new mongoose.Types.ObjectId().toString())).status, 404);
+  assert.equal((await markRefunded('not-an-id')).status, 404);
+});
+
+test('simultaneous mark-refunded calls: exactly one succeeds', async () => {
+  const order = await awaitingRefund(alice.user);
+  const results = await Promise.all(Array.from({ length: 4 }, () => markRefunded(order.id)));
+  assert.equal(results.filter((r) => r.status === 200).length, 1);
+  assert.ok(results.filter((r) => r.status !== 200).every((r) => r.status === 409));
+});

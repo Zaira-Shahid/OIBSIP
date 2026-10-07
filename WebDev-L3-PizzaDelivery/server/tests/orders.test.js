@@ -40,7 +40,9 @@ const selection = (extra = {}) => ({
   vegetables: [ids['vegetable:Onion'], ids['vegetable:Mushroom']],
   ...extra,
 });
-const UNIT = 80 + 20 + 40 + 10 + 20; // Classic + Classic Tomato + Mozzarella + Onion + Mushroom
+const priceOf = (category, name) => ingredients.find((i) => i.category === category && i.name === name).price;
+// Classic + Classic Tomato + Mozzarella + Onion + Mushroom
+const UNIT = priceOf('base', 'Classic') + priceOf('sauce', 'Classic Tomato') + priceOf('cheese', 'Mozzarella') + priceOf('vegetable', 'Onion') + priceOf('vegetable', 'Mushroom');
 
 test.before(async () => {
   assertEnv();
@@ -76,7 +78,7 @@ test('POST /api/orders creates an unpaid order with a server-computed amount and
   assert.equal(order.paymentStatus, 'PENDING');
   assert.equal(order.orderStatus, undefined);
   assert.equal(order.customPizza.base.name, 'Classic');
-  assert.equal(order.customPizza.base.price, 80);
+  assert.equal(order.customPizza.base.price, priceOf('base', 'Classic'));
   assert.equal(order.customPizza.vegetables.length, 2);
   assert.equal(order.userId, undefined);
 });
@@ -100,12 +102,12 @@ test('client-supplied amount, price, status or user fields are rejected', async 
 });
 
 test('the amount follows database prices, and the snapshot keeps the price and name at order time', async () => {
-  await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella' }, { price: 100 });
+  await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella' }, { price: priceOf('cheese', 'Mozzarella') + 60 });
   const created = await call('POST', '/api/orders', { token: alice.token, body: selection({ quantity: 2 }) });
   assert.equal(created.json.data.order.amount, (UNIT + 60) * 2);
-  await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella' }, { price: 40, name: 'Mozzarella Renamed' });
+  await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella' }, { price: priceOf('cheese', 'Mozzarella'), name: 'Mozzarella Renamed' });
   const stored = await Order.findById(created.json.data.order.id);
-  assert.equal(stored.customPizza.cheese.price, 100);
+  assert.equal(stored.customPizza.cheese.price, priceOf('cheese', 'Mozzarella') + 60);
   assert.equal(stored.customPizza.cheese.name, 'Mozzarella');
   await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella Renamed' }, { name: 'Mozzarella' });
 });
