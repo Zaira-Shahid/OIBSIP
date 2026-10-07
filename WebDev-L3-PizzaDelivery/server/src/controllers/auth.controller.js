@@ -4,7 +4,6 @@ const asyncHandler = require('../utils/asyncHandler');
 const { signToken } = require('../utils/jwt');
 const { createToken, hashToken } = require('../utils/tokens');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
-const { env } = require('../config/env');
 const User = require('../models/User');
 
 const { BCRYPT_ROUNDS, DUMMY_HASH } = require('../utils/passwords');
@@ -55,7 +54,7 @@ const register = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    data: { user, requiresVerification: env.requireVerified, emailSent },
+    data: { user, emailSent },
   });
 });
 
@@ -68,7 +67,7 @@ const login = asyncHandler(async (req, res) => {
   // Admin accounts cannot use this endpoint; they get the same generic error as a wrong password.
   if (!user || !passwordOk || user.role !== 'user') throw new ApiError(401, INVALID_LOGIN);
 
-  if (env.requireVerified && !user.isEmailVerified) {
+  if (!user.isEmailVerified) {
     throw new ApiError(403, 'Please verify your email address before logging in.', 'EMAIL_NOT_VERIFIED');
   }
 

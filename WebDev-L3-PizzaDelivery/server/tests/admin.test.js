@@ -4,7 +4,7 @@ process.env.NODE_ENV = 'test';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { execFile } = require('node:child_process');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 
@@ -63,6 +63,15 @@ const makeOrder = (user, extra = {}) =>
 const setStatus = (id, status, token = admin.token) =>
   call('PATCH', `/api/admin/orders/${id}/status`, { token, body: { status } });
 const loginAdmin = (email, password) => call('POST', '/api/admin/login', { body: { email, password } });
+// Runs a script in a child process WITHOUT blocking this process's event loop. A synchronous spawn freezes the
+// in-process test server for several seconds, its idle keep-alive connections time out, and the next fetch fails
+// with ECONNRESET. Resolves with { status, stdout, stderr } like spawnSync.
+const runNode = (args, options) =>
+  new Promise((resolve) =>
+    execFile(process.execPath, args, { ...options, encoding: 'utf8' }, (error, stdout, stderr) =>
+      resolve({ status: error ? (typeof error.code === 'number' ? error.code : 1) : 0, stdout, stderr })
+    )
+  );
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test.before(async () => {
@@ -286,10 +295,9 @@ test('two admins advancing the same order at once: exactly one wins', async () =
 
 test('admin:reset-password updates only that admin, applies the password rule and signs old sessions out', async () => {
   const reset = (email, password) =>
-    spawnSync(process.execPath, ['src/scripts/resetAdminPassword.js'], {
+    runNode(['src/scripts/resetAdminPassword.js'], {
       cwd: path.join(__dirname, '..'),
       env: { ...process.env, NODE_ENV: 'test', ADMIN_EMAIL: email, ADMIN_PASSWORD: password },
-      encoding: 'utf8',
     });
   const resetter = await makeUser('resetter', { role: 'admin', password: 'OldAdminPass1' });
   const before = await User.findOne({ _id: resetter.user._id }).select('+passwordHash');
@@ -297,7 +305,7 @@ test('admin:reset-password updates only that admin, applies the password rule an
   assert.equal((await call('GET', '/api/admin/me', { token: resetter.token })).status, 200);
   await sleep(1100); // token iat has one-second resolution
 
-  const ok = reset('resetter@admin-test.invalid', 'NewAdminPass2');
+  const ok = await reset('resetter@admin-test.invalid', 'NewAdminPass2');
   assert.equal(ok.status, 0, ok.stderr);
   assert.match(ok.stdout, /Password updated/);
 
@@ -317,18 +325,18 @@ test('admin:reset-password updates only that admin, applies the password rule an
   // Refusals leave everything as it was.
   const hash = async () => (await User.findOne({ _id: resetter.user._id }).select('+passwordHash')).passwordHash;
   const stable = await hash();
-  const weak = reset('resetter@admin-test.invalid', 'short');
+  const weak = await reset('resetter@admin-test.invalid', 'short');
   assert.equal(weak.status, 1);
   assert.match(weak.stderr, /Password must be/);
-  const customer = reset('alice@admin-test.invalid', 'HackedPass99');
+  const customer = await reset('alice@admin-test.invalid', 'HackedPass99');
   assert.equal(customer.status, 1);
   assert.match(customer.stderr, /not an admin/);
   assert.equal((await User.findOne({ _id: alice.user._id }).select('+passwordHash')).passwordHash, bystander.passwordHash);
-  const missing = reset('nobody@admin-test.invalid', 'SomePass123');
+  const missing = await reset('nobody@admin-test.invalid', 'SomePass123');
   assert.equal(missing.status, 1);
   assert.match(missing.stderr, /No account/);
   assert.equal(await hash(), stable);
-  const empty = reset('', '');
+  const empty = await reset('', '');
   assert.equal(empty.status, 1);
   assert.match(empty.stderr, /ADMIN_EMAIL/);
 });

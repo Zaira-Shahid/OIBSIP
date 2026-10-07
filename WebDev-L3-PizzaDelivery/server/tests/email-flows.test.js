@@ -46,7 +46,6 @@ const mailTo = (email) => sent.filter((m) => m.to === email);
 
 test.before(async () => {
   assertEnv();
-  env.requireVerified = true; // pin the default regardless of the developer .env
   setTransport({ sendMail: async (m) => void sent.push(m) });
   await connectDB();
   await cleanup();
@@ -110,7 +109,6 @@ test('tests can never reach a real mail server, even if the developer .env conta
 });
 
 test('verification: unverified login is blocked with a code the client can act on', async () => {
-  assert.equal(env.requireVerified, true);
   const res = await login(`reg${DOMAIN}`);
   assert.equal(res.status, 403);
   assert.equal(res.json.code, 'EMAIL_NOT_VERIFIED');

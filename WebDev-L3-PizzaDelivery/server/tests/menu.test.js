@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
+const { execFile } = require('node:child_process');
 const path = require('node:path');
 const mongoose = require('mongoose');
 
@@ -20,11 +20,21 @@ const get = async (url) => {
   const res = await fetch(base + url);
   return { status: res.status, json: await res.json() };
 };
-const seed = () =>
-  execFileSync(process.execPath, [path.join(__dirname, '../src/scripts/seedMenu.js')], {
-    env: { ...process.env, NODE_ENV: 'test' },
-    encoding: 'utf8',
-  });
+// Runs a script in a child process WITHOUT blocking this process's event loop. A synchronous spawn freezes the
+// in-process test server for several seconds, its idle keep-alive connections time out, and the next fetch fails
+// with ECONNRESET. Resolves with { status, stdout, stderr } like spawnSync.
+const runNode = (args, options) =>
+  new Promise((resolve) =>
+    execFile(process.execPath, args, { ...options, encoding: 'utf8' }, (error, stdout, stderr) =>
+      resolve({ status: error ? (typeof error.code === 'number' ? error.code : 1) : 0, stdout, stderr })
+    )
+  );
+const seed = async () =>
+  (
+    await runNode([path.join(__dirname, '../src/scripts/seedMenu.js')], {
+      env: { ...process.env, NODE_ENV: 'test' },
+    })
+  ).stdout;
 
 test.before(async () => {
   assertEnv();
@@ -60,14 +70,14 @@ test('menu endpoints return empty lists before seeding', async () => {
 });
 
 test('seed script is idempotent and never overwrites later edits', async () => {
-  seed();
+  await seed();
   assert.equal(await InventoryItem.countDocuments(), ingredients.length);
   assert.equal(await Pizza.countDocuments(), pizzas.length);
 
   // Simulate an admin editing stock/price, then re-seed.
   await InventoryItem.updateOne({ category: 'base', name: 'Classic' }, { stock: 7, price: 999 });
   await Pizza.updateOne({ name: 'Margherita' }, { description: 'Edited by an admin.' });
-  const out = seed();
+  const out = await seed();
   assert.match(out, /Ingredients: 0 added/);
   assert.match(out, /Pizzas: 0 added/);
   assert.match(out, /Upgraded from an older seed: 0 ingredient prices, 0 pizza updates/);
@@ -157,7 +167,7 @@ const post = async (url, body) => {
 const freshSeed = async () => {
   await Pizza.deleteMany({});
   await InventoryItem.deleteMany({});
-  seed();
+  await seed();
 };
 const legacyPizza = (name, description, image) => {
   const now = new Date();
@@ -245,7 +255,7 @@ test('seed never overwrites defaults an admin has changed', async () => {
   const margherita = await Pizza.findOne({ name: 'Margherita' });
   const changed = [...margherita.defaultIngredients, vegan._id];
   await Pizza.updateOne({ _id: margherita._id }, { defaultIngredients: changed });
-  seed();
+  await seed();
   const after = await Pizza.findOne({ name: 'Margherita' });
   assert.deepEqual(after.defaultIngredients.map(String), changed.map(String));
 });
@@ -261,7 +271,7 @@ test('seed upgrades a database made by the older seed, without touching admin ed
     legacyPizza('Four Cheese', 'My own words about this pizza.', presetNamed('Four Cheese').image),
   ]);
 
-  const out = seed();
+  const out = await seed();
   // 21 old ingredients; Classic Tomato kept its price; the admin-edited Classic is left alone.
   assert.match(out, /Upgraded from an older seed: 19 ingredient prices/);
 
@@ -289,7 +299,7 @@ test('seed upgrades a database made by the older seed, without touching admin ed
   assert.equal(await Pizza.countDocuments(), pizzas.length);
   assert.equal(await Pizza.collection.countDocuments({ price: { $exists: true } }), 0); // stale stored price removed
 
-  assert.match(seed(), /Upgraded from an older seed: 0 ingredient prices, 0 pizza updates/);
+  assert.match(await seed(), /Upgraded from an older seed: 0 ingredient prices, 0 pizza updates/);
   assert.equal((await get('/api/pizzas')).json.data.pizzas.length, pizzas.length);
 });
 
@@ -298,7 +308,7 @@ test('an admin-edited old pepperoni preset is left alone and hidden; Mushroom Me
   await InventoryItem.deleteMany({});
   await InventoryItem.insertMany(ingredients.map(legacyIngredient));
   await Pizza.collection.insertOne(legacyPizza(OLD_PEPPERONI.name, 'Our edited pepperoni text.', OLD_PEPPERONI.image));
-  seed();
+  await seed();
   const pepperoni = await Pizza.findOne({ name: 'Pepperoni Feast' });
   assert.equal(pepperoni.description, 'Our edited pepperoni text.');
   assert.equal(pepperoni.defaultIngredients.length, 0);

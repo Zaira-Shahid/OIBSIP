@@ -45,14 +45,14 @@ Automated: `cd server && npm test` (Node's built-in test runner against the sepa
 | Reject invalid email, short password, letters-only, digits-only, short name, empty body (400, clear message, nothing saved) | ✅ |
 | Reject `role: "admin"` in registration body (400, nothing saved) | ✅ |
 | Duplicate email rejected, case-insensitive (409) | ✅ |
-| Unverified login blocked (403) while `AUTH_REQUIRE_VERIFIED` is true | ✅ |
+| Unverified login blocked (403) | ✅ |
 | Verified login returns JWT with expiry; `GET /api/auth/me` returns profile | ✅ |
 | Wrong password and unknown email return the identical generic 401 | ✅ |
 | **Admin account rejected by `POST /api/auth/login`** with the same generic 401 | ✅ |
 | `/me` without token, garbage token, wrong-secret token, expired token, token for a deleted user: all 401 | ✅ |
 | `requireAdmin`: no token 401, normal user 403, forged `role: admin` claim in a user's token 403, real admin 200 (isolated probe app in the test file; no test route exists in the real app) | ✅ |
 | Rate limits do not block tests (30 rapid logins, none 429) | ✅ |
-| `AUTH_REQUIRE_VERIFIED=false` is ignored when `NODE_ENV=production` | ✅ |
+| (Module 3 history) the temporary `AUTH_REQUIRE_VERIFIED` switch was ignored in production; it was removed in Module 11 | ✅ |
 | `seed:admin`: creates verified admin; second run with a different password says "already exists, not overwritten", no duplicate, hash unchanged; weak password refused | ✅ |
 | Rate limiter in real (non-test) mode: 22 bad logins through the Vite proxy | ✅ first 20 returned 401, then 429 with a clear message |
 | Client `npm run lint` and `npm run build` | ✅ |
@@ -81,7 +81,7 @@ These were deliberately skipped in the browser and are **not** claimed as verifi
 
 ## Module 3 - Email verification & password recovery
 
-Automated: `cd server && npm test` now runs 29 tests (14 auth + 15 email flows). **29 of 29 pass.** Email flow tests inject a fake mail transport, so no real email is sent; tests pin `AUTH_REQUIRE_VERIFIED=true` regardless of the developer `.env`.
+Automated: `cd server && npm test` now runs 29 tests (14 auth + 15 email flows). **29 of 29 pass.** Email flow tests inject a fake mail transport, so no real email is sent.
 
 | Check | Result |
 | --- | --- |
@@ -109,7 +109,7 @@ Automated: `cd server && npm test` now runs 29 tests (14 auth + 15 email flows).
 
 ### How to check Module 3 yourself
 
-1. Put your Gmail address and a Gmail App Password in `server/.env` (`EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM`), set `AUTH_REQUIRE_VERIFIED=true`, restart the server.
+1. Put your Gmail address and a Gmail App Password in `server/.env` (`EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM`) and restart the server.
 2. Register a new account: expect the "We sent a verification link" screen and an email. Logging in before clicking the link shows the 403 message and a "Resend verification email" button.
 3. Click the link: "Your email has been verified". Reload the same link: "invalid, expired or already used". Log in.
 4. Log out, "Forgot your password?", enter the email, open the emailed link, set a new password, log in with it. The old password must fail.
@@ -432,9 +432,9 @@ Automated: `cd server && npm test` runs 157 tests (139 before Module 11, +18). *
 - **In a browser:** the new menu cards (price, ingredient line), Customize pre-selecting the preset (including the out-of-stock note), the "Build your own pizza" button, and the "Needs a manual refund" section of the admin Orders screen (it only appears when such an order exists).
 - Your existing dev database still has the old prices and presets until you run `npm run seed:menu` (see below). The running API server must also be restarted.
 
-### U1-U3 real-inbox check (you run this; needed before `AUTH_REQUIRE_VERIFIED` is removed)
+### U1-U3 real-inbox check (done by Zaira, all 7 steps passed)
 
-Use a mailbox you can open. In `server/.env` make sure the Gmail settings are filled in and `AUTH_REQUIRE_VERIFIED` is `true` (or absent), then restart the API server.
+Use a mailbox you can open. In `server/.env` make sure the Gmail settings are filled in, then restart the API server.
 
 1. **Register** a new account with that email at `/register`. You should see the "We sent a verification link" screen.
 2. **Verification email** arrives. Before clicking it, try to log in: it must be refused with "Please verify your email address", with a *Resend verification email* button (try it: a second email arrives).
@@ -444,7 +444,7 @@ Use a mailbox you can open. In `server/.env` make sure the Gmail settings are fi
 6. Click the reset link, set a new password (8-72 characters, a letter and a number). Log in with the **old** password: refused. Log in with the **new** password: works.
 7. Optional: use the reset link a second time: refused.
 
-Tell me which steps passed. If all do, U1-U3 become ✅ and the temporary flag is removed.
+**Result:** verification email, unverified login blocked with Resend, verify link, login, forgot-password email, reset, and login with the new password all worked. U1-U3 are ✅ and the temporary `AUTH_REQUIRE_VERIFIED` setting was removed (verification is now always required; the automated test checks the old variable no longer does anything).
 
 ### How to check part A yourself
 
@@ -454,3 +454,62 @@ Tell me which steps passed. If all do, U1-U3 become ✅ and the temporary flag i
 4. In the admin inventory set an ingredient of that preset to 0 stock, then click Customize on it again: it opens with that ingredient unselected and a note that it is out of stock.
 5. **Build your own pizza** (button on the dashboard) opens an empty builder.
 6. Admin refund list: this appears only after the rare "paid but ingredient ran out" case, which is hard to trigger by hand; it is covered by the automated tests.
+
+### Browser check (Module 11, part A) - done by Zaira
+
+| Check | Result |
+| ----- | ------ |
+| `seed:menu` run and server restarted; menu cards show the new prices with ingredient lines | ✅ |
+| Customize pre-selects the preset's ingredients | ✅ |
+| "Build your own pizza" works | ✅ |
+| A real Gmail low-stock email was delivered by "Run low-stock check now" (after fixing the App Password) | ✅ |
+
+## Module 11 - Final audit, polish and documentation (parts B to E)
+
+### Final audit (spec Phase 11)
+
+Total at this point: **157 tests**; `AUTH_REQUIRE_VERIFIED` has been removed and U1-U3 are verified (see the Module 3 and Module 11 sections).
+
+| Check | Result |
+| ----- | ------ |
+| Server tests (`npm test`) | ✅ **157 of 157 pass** (final run, after the flakiness fix below) |
+| Client `npm run lint` (no warnings) and `npm run build` | ✅ |
+| **Secrets, working tree:** pattern scan for Razorpay keys, MongoDB credentials in URIs, private keys, cloud/API keys | ✅ only two fake test keys (`rzp_test_unittestkey`, `rzp_test_inventorytest`) and one fake `rzp_live_abc` used by tests |
+| **Secrets, real values:** all 7 secret values in `server/.env` (Mongo URI and its password, JWT secret, admin password, both Razorpay values, Gmail App Password) searched in every tracked file and every commit on every branch | ✅ 0 matches |
+| `.env` is ignored and has never been committed (only `.env.example` is tracked) | ✅ |
+| A stray empty root `package-lock.json` that slipped into a commit during Module 10 | ✅ found and removed (`5531f92`) |
+| Client routes: every `Link`/`navigate` target is a defined route; unknown URLs reach the 404 page | ✅ |
+| Client has no `console` calls; no `dangerouslySetInnerHTML`; no TODO/FIXME markers in source | ✅ |
+| Static accessibility scan of all 30 components: 0 buttons without a type, 0 images without alt text, 0 unlabelled form controls | ✅ |
+| Loading, error and empty states exist on every data page (menu, orders, order detail, summary, builder, admin orders, inventory, dashboard) | ✅ |
+| Backend logs reviewed: only start-up, scheduler and failure lines; no tokens, passwords, keys or addresses are logged (the development-only email fallback prints the email itself, as documented) | ✅ |
+| Test isolation: with real SMTP settings in `.env` the suite could attempt real email; the email service now never builds a real transport under `NODE_ENV=test`, with a test | ✅ (found and fixed in this module) |
+| **Flaky test fixed:** three tests that ran a script with a *synchronous* child process froze the in-process test server for several seconds, its idle keep-alive connections timed out, and the next request failed with `ECONNRESET` (seen in about half of the runs of the menu tests). They now use an asynchronous child process; the menu tests then passed 3 of 3 repeated runs | ✅ |
+| Two further failures in earlier full runs were the test machine's DNS failing to resolve the Atlas host (`getaddrinfo ENOTFOUND`), once for a whole test file and once inside a child script; both passed on re-run and are not code failures. If a run shows `ENOTFOUND`, just run `npm test` again | ✅ noted |
+| Known gaps found by the audit: no page titles, no error boundary, no skip link, a fixed-height navbar that would overflow on narrow screens with the admin links, a landing page that was only a status badge, no empty message on an unseeded inventory page | ✅ all fixed (below) |
+
+### UI polish (no new features)
+
+- Landing page with real calls to action for logged-out customers, customers and admins, plus a three-step "How it works"; the server-status badge now appears only when something is wrong.
+- Page title per route (for example "My orders - Slice & Co."), a "Skip to main content" link, and a friendly error screen if a page crashes (it recovers on navigation).
+- The navbar wraps instead of overflowing on narrow screens; tighter side padding on phones; an empty-inventory hint that points to `npm run seed:menu`.
+
+### Documentation delivered
+
+[README.md](../README.md) rewritten to spec section 27 · [API.md](API.md) · [SUBMISSION-CHECKLIST.md](SUBMISSION-CHECKLIST.md) · [VIDEO-SCRIPT.md](VIDEO-SCRIPT.md) · [LINKEDIN-POST.md](LINKEDIN-POST.md) · `screenshots/README.md` (capture guide) · an updated [DEMO-CHECKLIST.md](DEMO-CHECKLIST.md) · `REQUIREMENTS.md` with every U and A row ✅.
+
+### Not yet verified (final)
+
+- **In a browser:** the new landing page, page titles, skip link (press Tab on any page), error screen (not easy to trigger), the wrapped navbar on a phone-width window, and the admin refund section.
+- Browser **console** check (F12) while clicking through the demo flow: expected clean, not yet looked at.
+- Responsive check at about 360 px wide on the main screens.
+- Screenshots, the video, the LinkedIn post and the peer comments (yours; guides are in the docs above).
+
+### How to check parts B to E yourself
+
+1. Landing page (`/`): logged out you see **Sign up to order** and **Log in**; as a customer **Browse the menu** and **Build your own pizza**; as admin **Open the admin dashboard**. No "server connected" badge unless the API is down (stop the API briefly to see the warning, then start it again).
+2. Look at the browser tab title on a few pages; it changes per page.
+3. Press `Tab` once on any page: a "Skip to main content" link appears at the top left; `Enter` jumps to the content.
+4. Make the browser window about 360 px wide and open the admin dashboard: the navbar links wrap onto a second line without overlapping the page.
+5. Open the browser console (F12) and click through register → pay → admin → inventory: report any red error.
+6. Read the README top to bottom as a stranger would and tell me anything that is unclear or wrong.
