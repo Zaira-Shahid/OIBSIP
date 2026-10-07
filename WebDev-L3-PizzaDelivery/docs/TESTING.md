@@ -404,3 +404,53 @@ Not exercised in a browser: hiding the tab and returning (pause and refresh), th
 5. In the customer window, leave My orders (and the order detail) open and untouched: the status and the 3-step tracker change within about 5 seconds without a reload.
 6. Switch to another browser tab for a while, change the status as admin, then come back: the page refreshes straight away.
 7. Put the `.env` cron back to `*/15 * * * *` (or remove the line) after the demo.
+
+## Module 11 - Final polish, part A (branch `module-11-final`)
+
+Automated: `cd server && npm test` runs 157 tests (139 before Module 11, +18). **157 of 157 pass.** The suite includes one test that waits for MongoDB's real TTL sweep (about 30 to 90 seconds), so a full run takes a little longer than before.
+
+| Check | Result |
+| ----- | ------ |
+| Every seeded preset is buildable (one base, sauce, cheese; seeded ingredients only; no duplicates) | ✅ |
+| Seeded preset prices are in a realistic range (₹200 to ₹450) | ✅ |
+| Menu price = sum of the preset's ingredient prices; `selection` is exactly its ingredient set; list is cheapest first | ✅ |
+| **What you see is what you pay:** `POST /api/pizzas/price` for each preset's selection returns exactly the card price | ✅ |
+| Changing an ingredient price changes the menu price immediately; list and detail agree | ✅ |
+| A preset with an inactive ingredient, no defaults, or two cheeses is hidden (list and detail) | ✅ |
+| `seed:menu` is idempotent (a second run changes nothing) and never overwrites admin-changed defaults, descriptions or prices | ✅ |
+| `seed:menu` upgrades a database made by the older seed: old prices moved (19 of 21; the admin-edited one kept), "Pepperoni Feast" renamed in place to "Mushroom Melt" (same record), defaults added, stale stored `price` removed; an admin-edited old pepperoni record is left alone and hidden | ✅ |
+| `Order` has a 24-hour TTL index limited to `PENDING`/`FAILED` (partial filter) | ✅ |
+| **Real TTL sweep** on a scratch collection with the same index (3 s expiry): old `PENDING` and `FAILED` orders deleted; old `PAID`, old refund-pending, a not-yet-due order and an order paid just before the sweep all kept | ✅ |
+| Refund list: only paid-unconfirmed orders, newest payment first, customer and payment id; admin-only | ✅ |
+| Mark refunded: works once, takes the order off the list, keeps the record; confirmed, unpaid, unknown and malformed ids refused; four simultaneous calls give one success | ✅ |
+| Existing builder, order, payment and inventory tests now derive prices from the seed data instead of hard-coded numbers | ✅ |
+| Tests can never reach a real mail server: with SMTP credentials in `.env` and no injected transport, sending fails locally (found when real Gmail settings in `.env` made an email test attempt real logins; fixed in `emailService`) | ✅ |
+| Client `npm run lint` (no warnings) and `npm run build` | ✅ |
+
+### Not yet verified (Module 11, part A)
+
+- **In a browser:** the new menu cards (price, ingredient line), Customize pre-selecting the preset (including the out-of-stock note), the "Build your own pizza" button, and the "Needs a manual refund" section of the admin Orders screen (it only appears when such an order exists).
+- Your existing dev database still has the old prices and presets until you run `npm run seed:menu` (see below). The running API server must also be restarted.
+
+### U1-U3 real-inbox check (you run this; needed before `AUTH_REQUIRE_VERIFIED` is removed)
+
+Use a mailbox you can open. In `server/.env` make sure the Gmail settings are filled in and `AUTH_REQUIRE_VERIFIED` is `true` (or absent), then restart the API server.
+
+1. **Register** a new account with that email at `/register`. You should see the "We sent a verification link" screen.
+2. **Verification email** arrives. Before clicking it, try to log in: it must be refused with "Please verify your email address", with a *Resend verification email* button (try it: a second email arrives).
+3. Click the link in the email: "Your email has been verified". Open the same link again: "invalid, expired or already used".
+4. **Log in** with the account: you reach the dashboard.
+5. Log out. **Forgot your password?** with that email: you always get the same generic message. A reset email arrives.
+6. Click the reset link, set a new password (8-72 characters, a letter and a number). Log in with the **old** password: refused. Log in with the **new** password: works.
+7. Optional: use the reset link a second time: refused.
+
+Tell me which steps passed. If all do, U1-U3 become ✅ and the temporary flag is removed.
+
+### How to check part A yourself
+
+1. In `server`, run `npm run seed:menu` once. It prints how many ingredient prices and pizza records it upgraded (and 0 on a second run). Restart the API server.
+2. Dashboard: six pizzas, each with a ₹ price and a line of ingredients. "Pepperoni Feast" is now "Mushroom Melt". Margherita is about ₹245, the others between about ₹315 and ₹360.
+3. Click **Customize** on a card: the builder opens at step 1 with that pizza's ingredients selected and a "Starting from ..." note. Go to the review step: the total equals the card price. Change an ingredient: the total follows.
+4. In the admin inventory set an ingredient of that preset to 0 stock, then click Customize on it again: it opens with that ingredient unselected and a note that it is out of stock.
+5. **Build your own pizza** (button on the dashboard) opens an empty builder.
+6. Admin refund list: this appears only after the rare "paid but ingredient ran out" case, which is hard to trigger by hand; it is covered by the automated tests.

@@ -191,3 +191,11 @@ a { color: var(--c-primary); }
 .badge--in_kitchen { background: #fff4d6; color: #7a4e00; border-color: #f0d48a; }
 .badge--sent_to_delivery { background: #e6f4ea; color: #145a2d; border-color: #b7dfc3; }
 .inv-check { margin: 0 0 16px; }
+
+/* Presets and refunds */
+.pizza-card__includes { margin: -8px 0 16px; color: var(--c-muted); font-size: 0.8rem; }
+.page-head .btn { margin-top: 12px; }
+.admin-refunds { margin-bottom: 24px; padding: 16px; border: 2px solid var(--c-warn); border-radius: var(--radius); background: #fffaf0; }
+.admin-refunds h2 { margin: 0 0 4px; font-size: 1.15rem; }
+.admin-refunds .order-list { margin-top: 12px; }
+.admin-order__confirm { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }

@@ -15,6 +15,8 @@ router.post('/login', adminLoginLimiter, validate(loginSchema), c.login);
 router.use(authenticateUser, requireAdmin);
 router.get('/me', c.me);
 router.get('/orders', c.listOrders);
+router.get('/orders/refunds', c.listRefunds);
+router.post('/orders/:id/mark-refunded', c.markRefunded);
 router.patch('/orders/:id/status', validate(statusSchema), c.updateOrderStatus);
 router.get('/inventory', inventory.listInventory);
 router.post('/inventory/check-low-stock', inventory.checkLowStock);

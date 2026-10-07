@@ -88,8 +88,25 @@ test('registration still succeeds (emailSent:false) when the mail server fails',
 
 test('email service refuses to send when no transport/SMTP is configured outside development', async () => {
   setTransport(null);
-  await assert.rejects(() => sendEmail({ to: 'a@b.invalid', subject: 's', text: 't', html: 'h' }), /not configured/);
-  setTransport({ sendMail: async (m) => void sent.push(m) });
+  try {
+    await assert.rejects(() => sendEmail({ to: 'a@b.invalid', subject: 's', text: 't', html: 'h' }), /not configured/);
+  } finally {
+    setTransport({ sendMail: async (m) => void sent.push(m) });
+  }
+});
+
+test('tests can never reach a real mail server, even if the developer .env contains SMTP credentials', async () => {
+  const saved = { user: env.email.user, password: env.email.password };
+  env.email.user = 'someone@gmail.invalid';
+  env.email.password = 'not-a-real-app-password';
+  setTransport(null);
+  try {
+    // With real-looking credentials and no injected transport, sending must fail locally instead of connecting.
+    await assert.rejects(() => sendEmail({ to: 'a@b.invalid', subject: 's', text: 't', html: 'h' }), /not configured/);
+  } finally {
+    Object.assign(env.email, saved);
+    setTransport({ sendMail: async (m) => void sent.push(m) });
+  }
 });
 
 test('verification: unverified login is blocked with a code the client can act on', async () => {

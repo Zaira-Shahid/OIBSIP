@@ -24,6 +24,9 @@ const post = async (body) => {
   });
   return { status: res.status, json: await res.json() };
 };
+const priceOf = (category, name) => ingredients.find((i) => i.category === category && i.name === name).price;
+const NO_VEG = priceOf('base', 'Classic') + priceOf('sauce', 'Classic Tomato') + priceOf('cheese', 'Mozzarella');
+const UNIT = NO_VEG + priceOf('vegetable', 'Onion') + priceOf('vegetable', 'Mushroom');
 const id = (key) => ids[key];
 const valid = () => ({
   base: id('base:Classic'),
@@ -51,21 +54,21 @@ test.after(async () => {
 test('price = base + sauce + cheese + vegetables, from database prices', async () => {
   const { status, json } = await post(valid());
   assert.equal(status, 200);
-  assert.equal(json.data.total, 80 + 20 + 40 + 10 + 20);
+  assert.equal(json.data.total, UNIT);
   assert.deepEqual(json.data.items.map((i) => i.category), ['base', 'sauce', 'cheese', 'vegetable', 'vegetable']);
   assert.ok(json.data.items.every((i) => i.id && i.name && typeof i.price === 'number'));
 });
 
 test('vegetables are optional (omitted or empty)', async () => {
   const { vegetables, ...rest } = valid();
-  assert.equal((await post(rest)).json.data.total, 140);
-  assert.equal((await post({ ...rest, vegetables: [] })).json.data.total, 140);
+  assert.equal((await post(rest)).json.data.total, NO_VEG);
+  assert.equal((await post({ ...rest, vegetables: [] })).json.data.total, NO_VEG);
 });
 
 test('price follows the database: an admin price change is reflected', async () => {
-  await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella' }, { price: 55 });
-  assert.equal((await post(valid())).json.data.total, 80 + 20 + 55 + 10 + 20);
-  await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella' }, { price: 40 });
+  await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella' }, { price: priceOf('cheese', 'Mozzarella') + 15 });
+  assert.equal((await post(valid())).json.data.total, UNIT + 15);
+  await InventoryItem.updateOne({ category: 'cheese', name: 'Mozzarella' }, { price: priceOf('cheese', 'Mozzarella') });
 });
 
 test('client-supplied prices or totals are rejected, never trusted', async () => {
@@ -125,7 +128,7 @@ test('response never exposes stock numbers', async () => {
 
 test('the pricing service (reused by order creation) enforces the same rules', async () => {
   const ok = await priceCustomPizza(valid());
-  assert.equal(ok.total, 170);
+  assert.equal(ok.total, UNIT);
   await assert.rejects(() => priceCustomPizza({ ...valid(), cheese: id('base:Classic') }), { statusCode: 400 });
 });
 

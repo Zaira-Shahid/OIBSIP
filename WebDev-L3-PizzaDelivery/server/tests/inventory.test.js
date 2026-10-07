@@ -221,7 +221,7 @@ test('invalid input is rejected with 400 and nothing changes', async () => {
     assert.equal((await patch(CLASSIC, body)).status, 400, JSON.stringify(body));
   }
   const item = await InventoryItem.findById(ids[CLASSIC]);
-  assert.deepEqual([item.stock, item.price, item.name, item.category, item.unit], [100, 80, 'Classic', 'base', 'pcs']);
+  assert.deepEqual([item.stock, item.price, item.name, item.category, item.unit], [100, ingredients.find((i) => i.name === 'Classic').price, 'Classic', 'base', 'pcs']);
 });
 
 test('unknown and malformed ids give 404', async () => {

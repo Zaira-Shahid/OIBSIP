@@ -128,9 +128,31 @@ Runs against a separate `pizza-delivery-test` database and cleans up after itsel
 4. Test card: `4111 1111 1111 1111`, any future expiry, any CVV, any name (see Razorpay's test-mode docs for UPI/netbanking test values).
 
 ### Known limitations
-- **Paid but out of stock (rare race).** If an ingredient runs out between the payment-start check and a successful payment, stock cannot be taken. The order stays `paymentStatus: PAID` with **no** order status, `needsRefund: true` is set, and the customer is shown a clear message that they will be refunded. The refund itself is **manual** (Razorpay dashboard); there is no admin screen for these orders yet.
-- **No webhook.** Confirmation relies on the browser returning from checkout. If the browser closes after paying but before verify, the payment is not auto-confirmed. A Razorpay webhook is planned for Module 11.
-- Abandoned unpaid orders are kept (they never show in order history).
+- **Paid but out of stock (rare race).** If an ingredient runs out between the payment-start check and a successful payment, stock cannot be taken. The order stays `paymentStatus: PAID` with **no** order status, `needsRefund: true` is set, and the customer is shown a clear message that they will be refunded. The refund itself is **manual** (Razorpay dashboard): the admin Orders screen lists these payments (with the Razorpay payment id) under "Needs a manual refund", and the admin marks each one once it has been refunded.
+- **No webhook.** Confirmation relies on the browser returning from checkout. If the browser closes after paying but before verify, the payment is not auto-confirmed. A Razorpay webhook is not implemented (it needs a publicly reachable URL and is outside the task requirements).
+- Unpaid orders (abandoned checkouts) are deleted automatically 24 hours after creation by a MongoDB TTL index that only covers `PENDING`/`FAILED` orders; a paid order is never deleted. Opening an old unpaid order after that gives "Order not found".
+
+## Menu and prices
+The six menu pizzas are presets: each is a list of builder ingredients (`defaultIngredients`), and **Customize** opens the builder with them already selected. A preset has no price of its own. The price on its card is the sum of the current prices of its ingredients, calculated by the server, so it always equals what the builder charges. `npm run seed:menu` is safe to re-run at any time and also upgrades a database seeded by an older version: it only changes a record that still holds exactly what the old seed wrote, so your own edits to stock, prices, descriptions or defaults are kept.
+
+## Deployment (optional)
+
+> **Not required for OIBSIP.** The project is graded from the repository and the demo video, and runs fully on `localhost`. This section is a guide only; nothing here has been deployed or tested by the project author.
+
+A common free setup is **Vercel** (client) + **Render** (server) + **MongoDB Atlas** (database):
+
+1. **Atlas:** keep the cluster you already use. Under *Network Access* allow the server's outbound addresses (Render free instances do not have fixed IPs, so `0.0.0.0/0` is the usual choice there; do not leave that open on a database holding real data).
+2. **Server on Render:** create a *Web Service* from the repository. Root directory `WebDev-L3-PizzaDelivery/server`, build command `npm install`, start command `npm start`. Set the same variables as your local `server/.env` (`MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, the `EMAIL_*` settings, the `RAZORPAY_*` **test** keys, `LOW_STOCK_CHECK_CRON`), plus `NODE_ENV=production` and `CLIENT_URL=<your Vercel URL>` (used for CORS and the links in emails). Run `npm run seed:menu` and `npm run seed:admin` once against the production database (for example from your computer with `MONGODB_URI` pointing at it).
+3. **Client on Vercel:** import the same repository. Root directory `WebDev-L3-PizzaDelivery/client`, framework Vite, build command `npm run build`, output directory `dist`. The app calls the API at the relative path `/api`, which only the Vite dev server proxies, so add a `vercel.json` in the client folder that forwards it and keeps client-side routes working:
+   ```json
+   {
+     "rewrites": [
+       { "source": "/api/:path*", "destination": "https://YOUR-SERVICE.onrender.com/api/:path*" },
+       { "source": "/(.*)", "destination": "/index.html" }
+     ]
+   }
+   ```
+4. **Things to know:** Render's free tier puts an idle service to sleep, and a sleeping server does not run the low-stock cron job, so scheduled alerts are unreliable there (the first request after a nap is also slow). Razorpay stays in **test mode** (`rzp_test_` keys only; live keys are refused by the server).
 
 ## Docs
 - [Requirements & traceability](docs/REQUIREMENTS.md)
