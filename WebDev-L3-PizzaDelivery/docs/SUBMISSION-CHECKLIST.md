@@ -11,20 +11,20 @@ Legend: ✅ verified (by whom is noted) · ☐ still to do (**you**) · the "Evi
 | Correct task folder exists | ✅ | `WebDev-L3-PizzaDelivery/` containing `client/`, `server/`, `docs/`, `README.md`, `screenshots/` |
 | Source code is present | ✅ | `client/src`, `server/src` |
 | README.md is present and accurate | ✅ | Follows spec section 27; features, stack, architecture, 8-step setup, test accounts, screenshots, limitations |
-| Screenshots / output files are present | ☐ | Nine PNGs in `screenshots/` (see `screenshots/README.md`); the README images show once they are committed |
+| Screenshots / output files are present | ✅ | Six PNGs in `screenshots/` (login, dashboard, builder, order summary, admin dashboard, inventory). Razorpay checkout, admin orders and order tracking need a paid order and are not included (see `screenshots/README.md`) |
 | No secrets in the repository | ✅ | Final audit: `.env` is ignored and never committed; none of the 7 real secret values in `server/.env` appears in any tracked file or any commit (checked across all history) |
 
-## Application (all verified in the browser by Zaira unless noted)
+## Application (see the notes: live payment and email could not be demonstrated at the end)
 
 | Item | Status |
 | --- | --- |
 | User flow works end to end (register, verify, log in, build, pay, track) | ✅ |
 | Admin flow works end to end (staff login, orders, status, inventory) | ✅ |
-| Payment test flow works (Razorpay test mode) | ✅ |
-| Inventory works (display, manual update, automatic decrement) | ✅ |
-| Low-stock notification works (real email, no repeats) | ✅ |
-| Real-time order tracking works | ✅ |
-| Forgot / reset password and email verification with a real inbox | ✅ |
+| Payment test flow works (Razorpay test mode) | ⚠ Implemented and covered by mocked-gateway tests; **not demonstrated live** (Razorpay API returns 406 from Pakistan) |
+| Inventory works (display, manual update, automatic decrement) | ✅ display and manual update shown in the demo video; automatic decrement covered by automated tests only |
+| Low-stock notification works (real email, no repeats) | ⚠ Implemented and tested; real email **not demonstrated** at the end (Gmail rejected the SMTP credentials) |
+| Real-time order tracking works | ⚠ Implemented and covered by automated tests; **not demonstrated live** (needs a paid order) |
+| Forgot / reset password and email verification with a real inbox | ⚠ Implemented and tested; real inbox **not demonstrated** at the end (Gmail rejected the SMTP credentials) |
 | Preset menu prices equal what the builder charges | ✅ (automated tests for every preset; Zaira checked the new prices and the pre-selection in the browser) |
 
 ## Video

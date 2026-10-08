@@ -7,3 +7,6 @@ build/
 *.log
 .DS_Store
 .vscode/
+
+# Demo video output (recordings are large and are not committed)
+/demo-video/

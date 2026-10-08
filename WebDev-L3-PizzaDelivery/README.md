@@ -146,9 +146,9 @@ No demo credentials are committed to this repository. Create your own:
 | --- | --- |
 | **Login** ![Login](screenshots/01-login.png) | **User dashboard** ![User dashboard](screenshots/02-user-dashboard.png) |
 | **Pizza builder** ![Pizza builder](screenshots/03-pizza-builder.png) | **Order summary** ![Order summary](screenshots/04-order-summary.png) |
-| **Razorpay test checkout** ![Razorpay test checkout](screenshots/05-razorpay-checkout.png) | **Admin dashboard** ![Admin dashboard](screenshots/06-admin-dashboard.png) |
-| **Inventory** ![Inventory](screenshots/07-admin-inventory.png) | **Order management** ![Order management](screenshots/08-admin-orders.png) |
-| **Order tracking** ![Order tracking](screenshots/09-order-tracking.png) | |
+| **Admin dashboard** ![Admin dashboard](screenshots/06-admin-dashboard.png) | **Inventory (one item showing Low stock)** ![Inventory](screenshots/07-admin-inventory.png) |
+
+The Razorpay checkout, order management and order tracking screens are not pictured: they need a paid order, and a live test payment could not be made from the author's network (see Known limitations).
 
 ## Using the admin and a customer at the same time
 
@@ -182,6 +182,8 @@ The automated suite runs against a separate `pizza-delivery-test` database and c
 
 ## Known limitations
 
+- **Razorpay could not be exercised live from the author's network.** Razorpay's API (`api.razorpay.com`) answers every request from Pakistan with HTTP 406, so `POST /api/orders/:id/payment` fails there with a 502 and no live test payment could be made at the end of the project. Order creation, checkout, HMAC signature verification, stock decrement and status tracking are implemented and covered by the automated tests, which use a **mocked gateway**. Live payment, live tracking and the stock decrement after a real payment were therefore **not demonstrated** in the demo video or screenshots. On a network where `api.razorpay.com` is reachable (see Troubleshooting) the flow is expected to work as it did in earlier manual checks.
+- **Email delivery depends on valid SMTP credentials.** At the time of the final recording the Gmail App Password in the author's `server/.env` was rejected by Gmail (`535 BadCredentials`), so verification, reset and low-stock emails could not be sent or demonstrated. The email code is covered by the automated tests (mocked transport). Create a new App Password and set `EMAIL_PASSWORD` to use real email.
 - **Paid but out of stock (rare race).** If an ingredient runs out between the payment-start check and a successful payment, stock cannot be taken. The order stays `paymentStatus: PAID` with **no** order status, is flagged for a refund, and the customer is told they will be refunded. The refund itself is **manual** (Razorpay dashboard): the admin Orders screen lists these payments (with the Razorpay payment id) under "Needs a manual refund", and the admin marks each one once refunded.
 - **No Razorpay webhook.** Confirmation relies on the browser returning from checkout. If the browser closes after paying but before verification, the payment is not auto-confirmed. A webhook needs a publicly reachable URL and is outside the task requirements.
 - Unpaid orders (abandoned checkouts) are deleted automatically 24 hours after creation by a MongoDB TTL index that only covers `PENDING`/`FAILED` orders; a paid order is never deleted.
@@ -194,6 +196,7 @@ The automated suite runs against a separate `pizza-delivery-test` database and c
 - **"Could not connect to any servers"** - add your IP under Atlas *Network Access*.
 - **Emails are not arriving** - use a Gmail *App Password* (Google account > Security > 2-Step Verification > App passwords), not your normal password, and check the spam folder. Without SMTP settings in development the link is printed in the server console.
 - **Payments say "not configured"** - set both Razorpay test keys in `server/.env` and restart the server.
+- **Razorpay API may reject requests from some regions (HTTP 406)** - use a network/VPN where `api.razorpay.com` is reachable. Check with `curl -i https://api.razorpay.com/v1/orders`: a `401` with a JSON body means it is reachable; a `406` means your network is blocked.
 - **The menu looks empty** - run `npm run seed:menu` in `server`.
 
 ## Deployment (optional)

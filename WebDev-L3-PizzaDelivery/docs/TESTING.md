@@ -513,3 +513,36 @@ Total at this point: **157 tests**; `AUTH_REQUIRE_VERIFIED` has been removed and
 4. Make the browser window about 360 px wide and open the admin dashboard: the navbar links wrap onto a second line without overlapping the page.
 5. Open the browser console (F12) and click through register → pay → admin → inventory: report any red error.
 6. Read the README top to bottom as a stranger would and tell me anything that is unclear or wrong.
+
+## Automated browser run against the real database - 2026-10-07 (by Claude) - BLOCKED at payment
+
+**Why this run exists:** the development database named in `server/.env` turned out to be in its pre-Module-11 state with **0 orders** and only 3 users, so the browser checks recorded earlier in this file (Modules 7, 9 and 10: payment, stock decrement, order tracking, low-stock email) were **not** run against this database. They are being re-verified with an automated browser (Playwright) against it. Until that finishes, treat those earlier browser-check tables as reports from Zaira's testing, not as confirmed against this database.
+
+| Step | Result (automated run, 2026-10-07) |
+| ---- | ---------------------------------- |
+| `npm run seed:menu` on this database: upgraded 20 ingredient prices and 10 pizza records; a second run changed nothing | ✅ verified |
+| Menu through the API: six presets with computed prices (Margherita 245 up to Veggie Supreme 360), Paneer present | ✅ verified |
+| Browser: log in as a verified customer, dashboard, Customize a preset, builder steps, order summary, "Proceed to pay" creates the unpaid order (`POST /api/orders` 201) | ✅ verified |
+| Browser: payment start (`POST /api/orders/:id/payment`) | ❌ **failed: 502 `GATEWAY_ERROR`** |
+| Payment in the Razorpay test checkout, order confirmation, stock decrease, admin status changes, customer tracker updating without a reload, low-stock alert email | ⏸ **not verified yet** (blocked by the failure above) |
+
+**Exact error:** the server's call to Razorpay (`POST https://api.razorpay.com/v1/orders`) is answered with **HTTP 406 Not Acceptable and an empty body**. Diagnosis (status codes only; no keys were printed):
+
+- `api.razorpay.com` returns 406 to **every** request from this machine: the app's request, a read-only `GET /v1/orders?count=1`, a request with a browser User-Agent, **a request with no credentials at all**, and plain `curl`. So it is neither the app code nor the keys.
+- `checkout.razorpay.com/v1/checkout.js` and `razorpay.com` load normally (200), and no proxy is configured on this machine. Only the API host rejects the requests, which points to a block in front of the API for this network or IP.
+- Not a bug in the project: this same code path created Razorpay orders during the Module 7 checks, so the network path to `api.razorpay.com` has changed since then.
+
+To confirm on your side: `curl -i https://api.razorpay.com/v1/orders` should answer **401** with a JSON error body (that means the API is reachable and only wants credentials). A **406** means this network is still being blocked.
+
+
+## Final run - 2026-10-08 (by Claude)
+
+| Check | Result |
+| ----- | ------ |
+| Server test suite (`npm test` in `server`, separate `pizza-delivery-test` database, mocked Razorpay gateway and mail transport) | ✅ 157 of 157 passing |
+| Real order through the UI (`POST /api/orders` creates the unpaid order) | ✅ 201 |
+| Real payment start (`POST /api/orders/:id/payment`) | ❌ 502: Razorpay's API answers HTTP 406 from this network (Pakistan). Not retried further and **not simulated** |
+| Email delivery (verification, low-stock alert) with the author's Gmail credentials | ❌ Gmail rejected the SMTP login (`535 BadCredentials`); the App Password in the author's `server/.env` needs replacing |
+| Demo video (`tools/demo-video`, Playwright + ffmpeg): landing, register validation, customer login and dashboard, builder, order summary, forgot password, staff login, admin dashboard, inventory (+10 restock, Low stock badge) | ✅ recorded; the admin orders screen was skipped because there are no real orders |
+
+**What is therefore not demonstrated live:** payment in Razorpay checkout, order confirmation, stock decrement after a real payment (A3), order tracking updates (U11, U12), the low-stock alert email and verification/reset emails with a real inbox. They are implemented and covered by the automated tests (mocked gateway and mail), but U10, U11, U12 and A3 are **not** marked as live-verified. Earlier manual checks in this file were reported by Zaira before the Razorpay block; they were not repeated in this final run.
