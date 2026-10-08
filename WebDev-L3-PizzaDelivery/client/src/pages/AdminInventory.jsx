@@ -78,6 +78,11 @@ export default function AdminInventory() {
           <p className="inv-summary" role="status">
             {low === 0 && out === 0 ? 'All active items are well stocked.' : `${low} low stock · ${out} out of stock`}
           </p>
+          {state.items.length === 0 && (
+            <div className="card center-note">
+              <p>There are no inventory items yet. Run <code>npm run seed:menu</code> in the server folder to add the menu ingredients.</p>
+            </div>
+          )}
           <div className="inv-check">
             <button type="button" className="btn btn--ghost" onClick={checkNow} disabled={check.running}>
               {check.running ? 'Checking…' : 'Run low-stock check now'}

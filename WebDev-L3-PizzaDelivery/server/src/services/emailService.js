@@ -12,6 +12,9 @@ function setTransport(custom) {
 
 function getTransport() {
   if (transport) return transport;
+  // Automated tests must never reach a real mail server, even when server/.env holds real SMTP settings:
+  // they inject a fake transport, and without one sending fails instead of using the real credentials.
+  if (env.nodeEnv === 'test') return null;
   if (isSmtpConfigured()) {
     transport = nodemailer.createTransport({
       host: env.email.host,

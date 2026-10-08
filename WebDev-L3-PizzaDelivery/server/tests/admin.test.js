@@ -4,7 +4,7 @@ process.env.NODE_ENV = 'test';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { execFile } = require('node:child_process');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 
@@ -63,6 +63,15 @@ const makeOrder = (user, extra = {}) =>
 const setStatus = (id, status, token = admin.token) =>
   call('PATCH', `/api/admin/orders/${id}/status`, { token, body: { status } });
 const loginAdmin = (email, password) => call('POST', '/api/admin/login', { body: { email, password } });
+// Runs a script in a child process WITHOUT blocking this process's event loop. A synchronous spawn freezes the
+// in-process test server for several seconds, its idle keep-alive connections time out, and the next fetch fails
+// with ECONNRESET. Resolves with { status, stdout, stderr } like spawnSync.
+const runNode = (args, options) =>
+  new Promise((resolve) =>
+    execFile(process.execPath, args, { ...options, encoding: 'utf8' }, (error, stdout, stderr) =>
+      resolve({ status: error ? (typeof error.code === 'number' ? error.code : 1) : 0, stdout, stderr })
+    )
+  );
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test.before(async () => {
@@ -286,10 +295,9 @@ test('two admins advancing the same order at once: exactly one wins', async () =
 
 test('admin:reset-password updates only that admin, applies the password rule and signs old sessions out', async () => {
   const reset = (email, password) =>
-    spawnSync(process.execPath, ['src/scripts/resetAdminPassword.js'], {
+    runNode(['src/scripts/resetAdminPassword.js'], {
       cwd: path.join(__dirname, '..'),
       env: { ...process.env, NODE_ENV: 'test', ADMIN_EMAIL: email, ADMIN_PASSWORD: password },
-      encoding: 'utf8',
     });
   const resetter = await makeUser('resetter', { role: 'admin', password: 'OldAdminPass1' });
   const before = await User.findOne({ _id: resetter.user._id }).select('+passwordHash');
@@ -297,7 +305,7 @@ test('admin:reset-password updates only that admin, applies the password rule an
   assert.equal((await call('GET', '/api/admin/me', { token: resetter.token })).status, 200);
   await sleep(1100); // token iat has one-second resolution
 
-  const ok = reset('resetter@admin-test.invalid', 'NewAdminPass2');
+  const ok = await reset('resetter@admin-test.invalid', 'NewAdminPass2');
   assert.equal(ok.status, 0, ok.stderr);
   assert.match(ok.stdout, /Password updated/);
 
@@ -317,18 +325,88 @@ test('admin:reset-password updates only that admin, applies the password rule an
   // Refusals leave everything as it was.
   const hash = async () => (await User.findOne({ _id: resetter.user._id }).select('+passwordHash')).passwordHash;
   const stable = await hash();
-  const weak = reset('resetter@admin-test.invalid', 'short');
+  const weak = await reset('resetter@admin-test.invalid', 'short');
   assert.equal(weak.status, 1);
   assert.match(weak.stderr, /Password must be/);
-  const customer = reset('alice@admin-test.invalid', 'HackedPass99');
+  const customer = await reset('alice@admin-test.invalid', 'HackedPass99');
   assert.equal(customer.status, 1);
   assert.match(customer.stderr, /not an admin/);
   assert.equal((await User.findOne({ _id: alice.user._id }).select('+passwordHash')).passwordHash, bystander.passwordHash);
-  const missing = reset('nobody@admin-test.invalid', 'SomePass123');
+  const missing = await reset('nobody@admin-test.invalid', 'SomePass123');
   assert.equal(missing.status, 1);
   assert.match(missing.stderr, /No account/);
   assert.equal(await hash(), stable);
-  const empty = reset('', '');
+  const empty = await reset('', '');
   assert.equal(empty.status, 1);
   assert.match(empty.stderr, /ADMIN_EMAIL/);
+});
+
+// ---- Paid-but-unconfirmed orders that need a manual refund ----
+
+const awaitingRefund = (user, extra = {}) =>
+  makeOrder(user, { orderStatus: undefined, needsRefund: true, paymentReference: 'pay_refund_1', paidAt: new Date(), ...extra });
+const markRefunded = (id, token = admin.token) => call('POST', `/api/admin/orders/${id}/mark-refunded`, { token });
+const refundList = async () => (await call('GET', '/api/admin/orders/refunds', { token: admin.token })).json.data.orders;
+
+test('refund list: only paid orders that could not be confirmed, newest payment first, with customer and payment id', async () => {
+  const older = await awaitingRefund(alice.user, { paymentReference: 'pay_old', paidAt: new Date(Date.now() - 60000) });
+  const newer = await awaitingRefund(bob.user, { paymentReference: 'pay_new' });
+  await makeOrder(alice.user); // confirmed: not a refund case
+  await makeOrder(alice.user, { paymentStatus: 'PENDING', orderStatus: undefined }); // unpaid
+
+  const res = await call('GET', '/api/admin/orders/refunds', { token: admin.token });
+  assert.equal(res.status, 200);
+  const { orders } = res.json.data;
+  assert.deepEqual(orders.map((o) => o.id), [newer.id, older.id]);
+  assert.deepEqual(orders[0].customer, { name: 'bob', email: 'bob@admin-test.invalid' });
+  assert.equal(orders[0].paymentReference, 'pay_new');
+  assert.equal(orders[0].amount, 300);
+  assert.equal(orders[0].userId, undefined);
+  assert.ok(orders[0].paidAt);
+  // These orders stay out of the normal order list and out of the customer's history.
+  assert.ok(!(await call('GET', '/api/admin/orders', { token: admin.token })).json.data.orders.some((o) => o.id === newer.id));
+});
+
+test('refund routes are admin-only', async () => {
+  const order = await awaitingRefund(alice.user);
+  assert.equal((await call('GET', '/api/admin/orders/refunds', { token: alice.token })).status, 403);
+  assert.equal((await call('GET', '/api/admin/orders/refunds', {})).status, 401);
+  assert.equal((await markRefunded(order.id, alice.token)).status, 403);
+  assert.equal((await markRefunded(order.id, '')).status, 401);
+  assert.equal((await Order.findById(order.id)).needsRefund, true);
+});
+
+test('marking an order refunded takes it off the list, once, and leaves it hidden from the customer', async () => {
+  const order = await awaitingRefund(alice.user);
+  const res = await markRefunded(order.id);
+  assert.equal(res.status, 200);
+  assert.equal(res.json.data.order.needsRefund, false);
+  assert.ok(res.json.data.order.refundedAt);
+  assert.deepEqual(await refundList(), []);
+  assert.equal((await Order.findById(order.id)).paymentStatus, 'PAID'); // the record is kept
+
+  const again = await markRefunded(order.id);
+  assert.equal(again.status, 409);
+  assert.equal(again.json.code, 'NOT_AWAITING_REFUND');
+  assert.deepEqual((await call('GET', '/api/orders', { token: alice.token })).json.data.orders, []);
+});
+
+test('only orders awaiting a refund can be marked: confirmed, unpaid, unknown and malformed ids are refused', async () => {
+  const confirmed = await makeOrder(alice.user);
+  const unpaid = await makeOrder(alice.user, { paymentStatus: 'PENDING', orderStatus: undefined });
+  for (const order of [confirmed, unpaid]) {
+    const res = await markRefunded(order.id);
+    assert.equal(res.status, 409);
+    assert.equal(res.json.code, 'NOT_AWAITING_REFUND');
+  }
+  assert.equal((await Order.findById(confirmed.id)).orderStatus, 'ORDER_RECEIVED');
+  assert.equal((await markRefunded(new mongoose.Types.ObjectId().toString())).status, 404);
+  assert.equal((await markRefunded('not-an-id')).status, 404);
+});
+
+test('simultaneous mark-refunded calls: exactly one succeeds', async () => {
+  const order = await awaitingRefund(alice.user);
+  const results = await Promise.all(Array.from({ length: 4 }, () => markRefunded(order.id)));
+  assert.equal(results.filter((r) => r.status === 200).length, 1);
+  assert.ok(results.filter((r) => r.status !== 200).every((r) => r.status === 409));
 });

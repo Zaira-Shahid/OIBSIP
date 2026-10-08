@@ -33,11 +33,16 @@ const optionsFor = (ingredients, key) => ingredients[key === 'vegetables' ? 'veg
 export default function Builder() {
   const [load, setLoad] = useState({ status: 'loading', ingredients: null, error: '' })
   const [attempt, setAttempt] = useState(0)
+  const locationState = useLocation().state
   // Coming back from the order summary restores the pizza and opens the review step.
-  const returned = useLocation().state?.selection
+  const returned = locationState?.selection
+  // Opened from a menu card: start at step 1 with that preset's ingredients already selected.
+  const preset = returned ? null : locationState?.preset
   const navigate = useNavigate()
   const [step, setStep] = useState(returned ? SUMMARY : 0)
   const [selection, setSelection] = useState(returned ?? EMPTY)
+  const [presetNote, setPresetNote] = useState('')
+  const presetApplied = useRef(false)
   const [error, setError] = useState('')
   const [priceResult, setPrice] = useState({ key: '', status: 'loading', total: null, error: '' })
   const headingRef = useRef(null)
@@ -45,12 +50,34 @@ export default function Builder() {
   useEffect(() => {
     let cancelled = false
     fetchIngredients()
-      .then((ingredients) => !cancelled && setLoad({ status: 'ready', ingredients, error: '' }))
+      .then((ingredients) => {
+        if (cancelled) return
+        setLoad({ status: 'ready', ingredients, error: '' })
+        // Pre-select the preset once. Anything that is out of stock right now is left unselected and the customer is told.
+        if (preset && !presetApplied.current) {
+          presetApplied.current = true
+          const available = new Set(Object.values(ingredients).flat().filter((o) => o.available).map((o) => o.id))
+          const { base, sauce, cheese, vegetables } = preset.selection
+          const wanted = [base, sauce, cheese, ...vegetables]
+          const missing = wanted.filter((id) => !available.has(id)).length
+          setSelection({
+            base: available.has(base) ? base : '',
+            sauce: available.has(sauce) ? sauce : '',
+            cheese: available.has(cheese) ? cheese : '',
+            vegetables: vegetables.filter((id) => available.has(id)),
+          })
+          setPresetNote(
+            missing
+              ? `Starting from ${preset.name}. ${missing === 1 ? 'One ingredient is' : `${missing} ingredients are`} out of stock right now, so you will need to pick a replacement.`
+              : `Starting from ${preset.name}. Change anything you like.`,
+          )
+        }
+      })
       .catch((err) => !cancelled && setLoad({ status: 'error', ingredients: null, error: getErrorMessage(err) }))
     return () => {
       cancelled = true
     }
-  }, [attempt])
+  }, [attempt, preset])
 
   // Move keyboard/screen-reader focus to the new step's heading.
   useEffect(() => {
@@ -130,6 +157,8 @@ export default function Builder() {
         <h1>Build your pizza</h1>
         <p className="lead">Four quick steps, then review your order.</p>
       </header>
+
+      {presetNote && <p className="notice card" role="status">{presetNote}</p>}
 
       <ol className="stepper" aria-label="Progress">
         {[...STEPS, { key: 'summary', label: 'Review' }].map((s, i) => (

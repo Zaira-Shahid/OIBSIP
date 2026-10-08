@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import usePolling from '../hooks/usePolling'
 import { getErrorMessage } from '../services/api'
-import { fetchAdminOrders, updateOrderStatus } from '../services/adminOrderService'
+import { fetchAdminOrders, fetchRefunds, markRefunded, updateOrderStatus } from '../services/adminOrderService'
 import { ORDER_STATUS_LABELS, formatDateTime, formatPrice } from '../utils/format'
 
 const POLL_MS = 10000
@@ -70,19 +70,69 @@ function OrderCard({ order, onUpdated, onConflict }) {
   )
 }
 
+// A payment that went through but could not be turned into an order (the ingredients ran out in between).
+// The admin refunds it in the Razorpay dashboard, then records that here. The two-step button avoids a stray click.
+function RefundCard({ order, onRefunded }) {
+  const [step, setStep] = useState('idle') // idle -> confirm -> saving
+  const [error, setError] = useState('')
+
+  async function confirm() {
+    setStep('saving')
+    setError('')
+    try {
+      onRefunded(await markRefunded(order.id))
+    } catch (err) {
+      setError(getErrorMessage(err))
+      setStep('idle')
+    }
+  }
+
+  return (
+    <li className="card admin-order admin-order--refund">
+      <div className="admin-order__head">
+        <strong>{order.customer ? order.customer.name : 'Deleted customer'}</strong>
+        {order.customer && <span className="field__hint">{order.customer.email}</span>}
+        <span className="field__hint">Paid {formatDateTime(order.paidAt)}</span>
+      </div>
+      <div className="admin-order__foot">
+        <span>
+          <strong>{formatPrice(order.amount)}</strong> · Razorpay payment id: <code>{order.paymentReference}</code>
+        </span>
+        {step === 'idle' && (
+          <button type="button" className="btn btn--ghost" onClick={() => setStep('confirm')}>
+            Mark as refunded
+          </button>
+        )}
+        {step !== 'idle' && (
+          <span className="admin-order__confirm">
+            <span className="field__hint">Have you refunded this payment in Razorpay?</span>
+            <button type="button" className="btn" onClick={confirm} disabled={step === 'saving'}>
+              {step === 'saving' ? 'Saving…' : 'Yes, it is refunded'}
+            </button>
+            <button type="button" className="btn btn--ghost" onClick={() => setStep('idle')} disabled={step === 'saving'}>
+              Cancel
+            </button>
+          </span>
+        )}
+      </div>
+      {error && <p className="field__error" role="alert">{error}</p>}
+    </li>
+  )
+}
+
 // Confirmed orders, newest first. Refreshes by itself so a new paid order appears without reloading.
 export default function AdminOrders() {
-  const [state, setState] = useState({ status: 'loading', orders: [], error: '', reconnecting: false })
+  const [state, setState] = useState({ status: 'loading', orders: [], refunds: [], error: '', reconnecting: false })
 
   const load = useCallback(async () => {
     try {
-      const orders = await fetchAdminOrders()
-      setState({ status: 'ready', orders, error: '', reconnecting: false })
+      const [orders, refunds] = await Promise.all([fetchAdminOrders(), fetchRefunds()])
+      setState({ status: 'ready', orders, refunds, error: '', reconnecting: false })
     } catch (err) {
       setState((s) =>
         s.status === 'ready'
           ? { ...s, reconnecting: true }
-          : { status: 'error', orders: [], error: getErrorMessage(err), reconnecting: false },
+          : { status: 'error', orders: [], refunds: [], error: getErrorMessage(err), reconnecting: false },
       )
     }
   }, [])
@@ -90,6 +140,7 @@ export default function AdminOrders() {
 
   const replaceOrder = (updated) =>
     setState((s) => ({ ...s, orders: s.orders.map((o) => (o.id === updated.id ? updated : o)) }))
+  const removeRefund = (done) => setState((s) => ({ ...s, refunds: s.refunds.filter((o) => o.id !== done.id) }))
 
   const count = (status) => state.orders.filter((o) => o.orderStatus === status).length
 
@@ -110,7 +161,7 @@ export default function AdminOrders() {
             type="button"
             className="btn"
             onClick={() => {
-              setState({ status: 'loading', orders: [], error: '', reconnecting: false })
+              setState({ status: 'loading', orders: [], refunds: [], error: '', reconnecting: false })
               refresh()
             }}
           >
@@ -121,6 +172,20 @@ export default function AdminOrders() {
 
       {state.status === 'ready' && (
         <>
+          {state.refunds.length > 0 && (
+            <div className="admin-refunds" role="region" aria-label="Orders needing a manual refund">
+              <h2>Needs a manual refund ({state.refunds.length})</h2>
+              <p className="field__hint">
+                These customers paid, but an ingredient ran out before the order could be confirmed, so no order was placed.
+                Refund each payment in the Razorpay dashboard (search for the payment id), then mark it here.
+              </p>
+              <ul className="order-list">
+                {state.refunds.map((order) => (
+                  <RefundCard key={order.id} order={order} onRefunded={removeRefund} />
+                ))}
+              </ul>
+            </div>
+          )}
           <p className="inv-summary" role="status">
             {count('ORDER_RECEIVED')} received · {count('IN_KITCHEN')} in kitchen · {count('SENT_TO_DELIVERY')} sent to delivery
           </p>

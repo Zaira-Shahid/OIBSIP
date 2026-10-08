@@ -49,7 +49,8 @@ const selection = (extra = {}) => ({
   vegetables: [ids['vegetable:Onion'], ids['vegetable:Mushroom']],
   ...extra,
 });
-const UNIT = 80 + 20 + 40 + 10 + 20;
+const priceOf = (category, name) => ingredients.find((i) => i.category === category && i.name === name).price;
+const UNIT = priceOf('base', 'Classic') + priceOf('sauce', 'Classic Tomato') + priceOf('cheese', 'Mozzarella') + priceOf('vegetable', 'Onion') + priceOf('vegetable', 'Mushroom');
 const sign = (razorpayOrderId, paymentId, secret = KEY_SECRET) =>
   crypto.createHmac('sha256', secret).update(`${razorpayOrderId}|${paymentId}`).digest('hex');
 

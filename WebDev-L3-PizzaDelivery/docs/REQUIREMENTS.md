@@ -9,21 +9,21 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 
 | ID  | Requirement                              | Module            | Implementation | Test | Status |
 | --- | ---------------------------------------- | ----------------- | -------------- | ---- | ------ |
-| U1  | User registration + email verification   | 2, 3              | Registration: `auth.controller`, Register page | `server/tests/auth.test.js` | 🚧 registration done; verification email in Module 3 |
-| U2  | JWT login                                | 2                 | `auth.controller`, `authenticateUser`, Login page | `server/tests/auth.test.js` | 🚧 works; stays 🚧 until Module 3 makes verified-only login real |
-| U3  | Forgot password + email reset link       | 3                 | `forgotPassword`/`resetPassword`, `emailService`, ForgotPassword/ResetPassword pages | `server/tests/email-flows.test.js` | 🚧 API + tests pass; real inbox + browser check pending |
+| U1  | User registration + email verification   | 2, 3              | Registration: `auth.controller`, Register page | `server/tests/auth.test.js` | ✅ approved by Zaira (real-inbox check passed) |
+| U2  | JWT login                                | 2                 | `auth.controller`, `authenticateUser`, Login page | `server/tests/auth.test.js` | ✅ approved by Zaira (real-inbox check passed) |
+| U3  | Forgot password + email reset link       | 3                 | `forgotPassword`/`resetPassword`, `emailService`, ForgotPassword/ResetPassword pages | `server/tests/email-flows.test.js` | ✅ approved by Zaira (real-inbox check passed) |
 | U4  | Pizza dashboard                          | 4                 | `Dashboard`, `PizzaCard`, `pizza.controller` | `server/tests/menu.test.js` | ✅ API tests pass; browser check done by Zaira |
 | U5  | At least 5 pizza bases                   | 4, 5              | `InventoryItem` (category `base`), `seed:menu`, `GET /api/ingredients` | `server/tests/menu.test.js`, `builder.test.js` | ✅ approved by Zaira |
 | U6  | At least 5 sauces                        | 4, 5              | `InventoryItem` (category `sauce`), `seed:menu`, `GET /api/ingredients` | `server/tests/menu.test.js`, `builder.test.js` | ✅ approved by Zaira |
 | U7  | Cheese selection                         | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U8  | Multiple vegetable selection             | 5                 | `Builder`, `OptionGroup`, `POST /api/pizzas/price` | `server/tests/builder.test.js` | ✅ approved by Zaira |
 | U9  | Order summary                            | 6                 | `OrderSummary`, `PizzaBreakdown`, `POST /api/orders` | `server/tests/orders.test.js` | ✅ API tests pass; browser check done by Zaira |
-| U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | ✅ approved by Zaira (real test-mode checkout verified) |
-| U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`; ORDER_RECEIVED on verified payment, then forward-only admin updates (`AdminOrders`) | `server/tests/payments.test.js`, `admin.test.js`, `tracking.test.js` | ✅ approved by Zaira (browser-verified) |
-| U12 | Real-time status on user dashboard       | 10                | `usePolling` (5 s), `Orders`, `OrderDetail`, `OrderTracker` | `server/tests/tracking.test.js` (API side) | ✅ approved by Zaira (browser-verified) |
+| U10 | Razorpay test-mode checkout              | 7                 | `payment.controller`, `paymentService`, `OrderSummary`, `razorpay.js` | `server/tests/payments.test.js` (fake gateway) | ✅ implemented; automated tests pass (mocked gateway). Live payment **not demonstrated**: Razorpay API returns 406 from Pakistan |
+| U11 | Order statuses (Received/Kitchen/Delivery) | 6, 7, 10        | `Order.orderStatus`; ORDER_RECEIVED on verified payment, then forward-only admin updates (`AdminOrders`) | `server/tests/payments.test.js`, `admin.test.js`, `tracking.test.js` | ✅ implemented; automated tests pass. **Not demonstrated live**: needs a paid order, and Razorpay returns 406 from Pakistan |
+| U12 | Real-time status on user dashboard       | 10                | `usePolling` (5 s), `Orders`, `OrderDetail`, `OrderTracker` | `server/tests/tracking.test.js` (API side) | ✅ implemented; automated tests pass. **Not demonstrated live**: needs a paid order, and Razorpay returns 406 from Pakistan |
 | A1  | Separate admin login                     | 8                 | `POST /api/admin/login`, `requireAdmin` on `/api/admin`, `AdminLogin`, `AdminRoute` | `server/tests/admin.test.js` | ✅ approved by Zaira |
 | A2  | Inventory dashboard                      | 9                 | `GET /api/admin/inventory`, `AdminInventory`, `InventoryRow` | `server/tests/inventory.test.js` | ✅ approved by Zaira |
-| A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | ✅ implemented in Module 7; verified end to end in the browser by Zaira (a paid order lowered stock by the ordered quantity) |
+| A3  | Automatic stock decrement after orders   | 7, 9              | `decrementStock` in `payment.controller` | `server/tests/payments.test.js` | ✅ implemented; automated tests pass (including a paid order lowering stock by its quantity, with a mocked gateway). **Not demonstrated live**: Razorpay returns 406 from Pakistan |
 | A4  | Manual stock update                      | 9                 | `PATCH /api/admin/inventory/:id`, `InventoryRow` | `server/tests/inventory.test.js` | ✅ approved by Zaira |
 | A5  | Configurable low-stock threshold         | 9, 10             | Per-item `lowStockThreshold` editable in `PATCH /api/admin/inventory/:id`; `inventoryStatus` rule | `server/tests/inventory.test.js` | ✅ approved by Zaira (threshold in Module 9; alert state and reset in Module 10, verified with a real email) |
 | A6  | Scheduled low-stock email (node-cron)    | 10                | `lowStockService` (`runLowStockCheck`, `startLowStockScheduler`), `sendLowStockDigest`, `POST /api/admin/inventory/check-low-stock` | `server/tests/lowstock.test.js` | ✅ approved by Zaira (real Gmail digest and 1-minute cron verified) |
@@ -34,16 +34,16 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 | #  | Module                                      | Status |
 | -- | ------------------------------------------- | ------ |
 | 1  | Project foundation & architecture           | ✅ |
-| 2  | User authentication                         | ✅ approved by Zaira (U1/U2 stay 🚧 until Module 3) |
-| 3  | Email verification & password recovery      | ✅ approved by Zaira (real-inbox check not run by Claude; U1–U3 stay 🚧 until that is done) |
-| 4  | Pizza dashboard                             | ✅ approved by Zaira (U5/U6 stay 🚧 until the Module 5 builder shows them) |
+| 2  | User authentication                         | ✅ approved by Zaira |
+| 3  | Email verification & password recovery      | ✅ approved by Zaira (real-inbox check passed in Module 11) |
+| 4  | Pizza dashboard                             | ✅ approved by Zaira |
 | 5  | Custom pizza builder                        | ✅ approved by Zaira |
 | 6  | Order management                            | ✅ approved by Zaira (merged via PR #4) |
 | 7  | Razorpay payment                            | ✅ approved by Zaira |
 | 8  | Admin authentication & authorization        | ✅ approved by Zaira |
 | 9  | Inventory management                        | ✅ approved by Zaira |
 | 10 | Low-stock automation + real-time tracking   | ✅ approved by Zaira |
-| 11 | Testing, UI polish & submission             | ☐ |
+| 11 | Testing, UI polish & submission             | 🚧 built, audited, tests pass; awaiting Zaira's browser/console/responsive check, screenshots and "approved" |
 
 ### Module 1 foundation checklist (spec Phase 1)
 
@@ -67,7 +67,7 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - Exactly one base, one sauce and one cheese are required; vegetables are optional and multiple.
 - `POST /api/pizzas/price` takes ingredient ids only and returns the total computed from database prices. A client-sent price/total is rejected. Order creation (Modules 6/7) must call `priceCustomPizza` (`server/src/services/pricingService.js`) again and never trust a client total.
 - Out-of-stock or inactive ingredients are rejected by the price endpoint (409 `OUT_OF_STOCK` / 400).
-- Preset pre-selection (`defaultIngredients` on Pizza) is lower priority and not built yet; "Customize" currently opens the same empty builder.
+- Preset pre-selection was deferred from Module 5 and built in Module 11 (see below).
 
 ## Module 6 decisions (approved by Zaira)
 
@@ -112,16 +112,23 @@ Legend: ☐ not started · 🚧 in progress · ✅ verified
 - Real-time = polling (spec 5.1): 5 s for customers (My orders, Order details), 10 s for admin (orders, dashboard). Polling pauses when the tab is hidden, refreshes when it becomes visible, never overlaps, and stops on unmount. A failed poll keeps the last data and shows "Reconnecting".
 - Admin orders screen shows only the one legal next step as a button; the server still enforces it.
 
+## Module 11 decisions (approved by Zaira)
+
+- **Presets:** each preset stores `defaultIngredients`; "Customize" opens the builder with them pre-selected (anything out of stock is left unselected with a note). The price on a card is the server-computed sum of those ingredients, so it equals what the builder charges. A preset whose ingredients are missing or inactive is hidden instead of showing a wrong price.
+- **Realistic prices:** ingredient prices were rebalanced so presets cost about ₹245-360. `seed:menu` moves an existing record to a new price only if it still has the old seeded price, upgrades old presets only while they are exactly as the old seed wrote them, and stays idempotent. "Pepperoni Feast" (no pepperoni exists in the builder) became "Mushroom Melt" and "Paneer" was added as a vegetable-category ingredient, so every preset can really be built.
+- **Unpaid orders** are deleted 24 hours after creation by a partial TTL index (`PENDING`/`FAILED` only); paid orders are never deleted.
+- **Refunds:** the admin Orders screen lists paid-but-unconfirmed orders (customer, amount, Razorpay payment id) and lets the admin mark each one refunded after refunding it in the Razorpay dashboard.
+- **No webhook:** kept as a documented limitation.
+- **`AUTH_REQUIRE_VERIFIED` removed** after the real-inbox check of U1-U3 passed: email verification is always required for customer login.
+- **Optional deployment guide** (Vercel + Render + Atlas) added to the README; nothing is deployed.
+
 ## TODO
+
 
 - [ ] **Module 11 (note):** `npm audit` in `server` reports 3 high-severity findings, all in the dev-only chain `nodemon` -> `chokidar` -> `braces` (stack-exhaustion DoS on deeply nested glob patterns). They are not in production dependencies (the client reports 0). The only offered fix downgrades nodemon to 1.14.10, which is not safe; revisit when nodemon ships a fixed chokidar.
 
 
-- [ ] **Module 11:** add a Razorpay webhook (`payment.captured`) as a safety net for browsers that close before verify, and a screen or report for `needsRefund` orders.
 
-- [ ] **After Module 7:** preset pizza pre-select. Decide how a preset's listed price relates to the builder's ingredient-sum price (Margherita is listed at ₹249 but its ingredients sum to about ₹140). If a `defaultIngredients` field is added to Pizza, keep `seed:menu` idempotent and update existing dev records safely. "Customize" currently opens an empty builder for every pizza.
-- [ ] Unpaid orders left behind (user abandons payment) are kept and hidden from history; decide on a cleanup or expiry (Module 11).
-- [ ] **After Module 3 is verified:** remove the temporary `AUTH_REQUIRE_VERIFIED` setting (or keep it hard-coded to `true`). It exists only so unverified users can log in during development; it is already ignored in production.
 - [ ] Restrict Atlas Network Access (currently `0.0.0.0/0`) before any deployment.
 
 ## Module 2 decisions (approved by Zaira)

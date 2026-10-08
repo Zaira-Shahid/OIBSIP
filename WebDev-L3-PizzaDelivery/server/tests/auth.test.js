@@ -4,7 +4,7 @@ process.env.NODE_ENV = 'test';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { execFile, spawnSync } = require('child_process');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -26,6 +26,16 @@ const ADMIN_PASSWORD = 'AdminPass123';
 let server;
 let base;
 
+// Runs a script in a child process WITHOUT blocking this process's event loop. A synchronous spawn freezes the
+// in-process test server for several seconds, its idle keep-alive connections time out, and the next fetch fails
+// with ECONNRESET. Resolves with { status, stdout, stderr } like spawnSync.
+const runNode = (args, options) =>
+  new Promise((resolve) =>
+    execFile(process.execPath, args, { ...options, encoding: 'utf8' }, (error, stdout, stderr) =>
+      resolve({ status: error ? (typeof error.code === 'number' ? error.code : 1) : 0, stdout, stderr })
+    )
+  );
+
 const call = async (method, url, { body, token, root = base } = {}) => {
   const res = await fetch(root + url, {
     method,
@@ -44,7 +54,6 @@ const register = (email, extra = {}) =>
 
 test.before(async () => {
   assertEnv();
-  env.requireVerified = true; // pin the default regardless of the developer .env
   setTransport({ sendMail: async () => {} });
   await connectDB();
   await cleanup();
@@ -110,8 +119,7 @@ test('register: duplicate email is rejected, case-insensitively', async () => {
   assert.match(res.json.message, /already exists/);
 });
 
-test('login: unverified account is refused with 403 when verification is required', async () => {
-  assert.equal(env.requireVerified, true);
+test('login: an unverified account is refused with 403', async () => {
   const res = await call('POST', '/api/auth/login', { body: { email: `valid${DOMAIN}`, password: PASSWORD } });
   assert.equal(res.status, 403);
   assert.match(res.json.message, /verify your email/i);
@@ -204,33 +212,32 @@ test('rate limits do not block automated tests', async () => {
   assert.ok(results.every((r) => r.status === 401));
 });
 
-test('AUTH_REQUIRE_VERIFIED=false is ignored in production', () => {
+test('email verification cannot be switched off: the old AUTH_REQUIRE_VERIFIED variable no longer does anything', () => {
   const run = (nodeEnv) =>
-    spawnSync(process.execPath, ['-e', "console.log(require('./src/config/env').env.requireVerified)"], {
+    spawnSync(process.execPath, ['-e', "console.log('requireVerified' in require('./src/config/env').env)"], {
       cwd: path.join(__dirname, '..'),
       env: { ...process.env, NODE_ENV: nodeEnv, AUTH_REQUIRE_VERIFIED: 'false' },
       encoding: 'utf8',
     }).stdout.trim();
   assert.equal(run('development'), 'false');
-  assert.equal(run('production'), 'true');
+  assert.equal(run('production'), 'false');
 });
 
 test('seed:admin is idempotent, creates a verified admin and never overwrites the password', async () => {
   const seed = (password) =>
-    spawnSync(process.execPath, ['src/scripts/seedAdmin.js'], {
+    runNode(['src/scripts/seedAdmin.js'], {
       cwd: path.join(__dirname, '..'),
       env: { ...process.env, NODE_ENV: 'test', ADMIN_EMAIL: ADMIN_EMAIL, ADMIN_PASSWORD: password },
-      encoding: 'utf8',
     });
 
-  const first = seed(ADMIN_PASSWORD);
+  const first = await seed(ADMIN_PASSWORD);
   assert.equal(first.status, 0, first.stderr);
   assert.match(first.stdout, /created/);
   const created = await User.findOne({ email: ADMIN_EMAIL }).select('+passwordHash');
   assert.equal(created.role, 'admin');
   assert.equal(created.isEmailVerified, true);
 
-  const second = seed('DifferentPass456');
+  const second = await seed('DifferentPass456');
   assert.equal(second.status, 0, second.stderr);
   assert.match(second.stdout, /already exists.*not overwritten/);
   assert.equal(await User.countDocuments({ email: ADMIN_EMAIL }), 1);
@@ -238,7 +245,7 @@ test('seed:admin is idempotent, creates a verified admin and never overwrites th
   assert.equal(after.passwordHash, created.passwordHash);
   assert.ok(await bcrypt.compare(ADMIN_PASSWORD, after.passwordHash));
 
-  const weak = seed('weak');
+  const weak = await seed('weak');
   assert.notEqual(weak.status, 0);
   assert.ok(!weak.stderr.includes('weak') || /ADMIN_PASSWORD:/.test(weak.stderr));
 });

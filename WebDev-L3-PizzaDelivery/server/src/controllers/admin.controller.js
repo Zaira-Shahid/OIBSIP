@@ -73,3 +73,36 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
     data: { order: { ...updated.toJSON(), customer: updated.userId && { name: updated.userId.name, email: updated.userId.email } } },
   });
 });
+
+const withCustomer = (doc) => ({
+  ...doc.toJSON(),
+  customer: doc.userId ? { name: doc.userId.name, email: doc.userId.email } : null,
+});
+
+// Payments that went through but could not be turned into a confirmed order (the ingredients ran out in the
+// moment between paying and confirming). These need a manual refund in the Razorpay dashboard; the payment id
+// is shown so the payment can be found there.
+exports.listRefunds = asyncHandler(async (req, res) => {
+  const docs = await Order.find({ paymentStatus: 'PAID', needsRefund: true, orderStatus: { $exists: false } })
+    .sort({ paidAt: -1 })
+    .limit(MAX_ORDERS)
+    .populate({ path: 'userId', select: 'name email' });
+  res.json({ success: true, data: { orders: docs.map(withCustomer) } });
+});
+
+// Records that the refund was made (in the Razorpay dashboard), which takes the order off the list. Only an order that
+// is still waiting for its refund can be marked, and only once.
+exports.markRefunded = asyncHandler(async (req, res) => {
+  const filter = { _id: req.params.id, paymentStatus: 'PAID', needsRefund: true, orderStatus: { $exists: false } };
+  const updated = mongoose.isValidObjectId(req.params.id)
+    ? await Order.findOneAndUpdate(filter, { needsRefund: false, refundedAt: new Date() }, { returnDocument: 'after' }).populate({
+        path: 'userId',
+        select: 'name email',
+      })
+    : null;
+  if (updated) return res.json({ success: true, data: { order: withCustomer(updated) } });
+
+  const exists = mongoose.isValidObjectId(req.params.id) && (await Order.exists({ _id: req.params.id }));
+  if (!exists) throw new ApiError(404, 'Order not found.');
+  throw new ApiError(409, 'This order is not waiting for a refund.', 'NOT_AWAITING_REFUND');
+});

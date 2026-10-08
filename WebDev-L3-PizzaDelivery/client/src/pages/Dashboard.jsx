@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import PizzaCard from '../components/PizzaCard'
 import useAuth from '../hooks/useAuth'
 import { getErrorMessage } from '../services/api'
@@ -29,7 +30,8 @@ export default function Dashboard() {
     <section>
       <header className="page-head">
         <h1>Hi {user.name}, what are you craving?</h1>
-        <p className="lead">Pick a favourite or customize your own.</p>
+        <p className="lead">Pick a favourite and change anything you like, or start from scratch.</p>
+        <Link className="btn btn--ghost" to="/builder">Build your own pizza</Link>
       </header>
 
       {state.status === 'loading' && (

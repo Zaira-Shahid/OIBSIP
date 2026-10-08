@@ -23,9 +23,16 @@ export default function PizzaCard({ pizza }) {
       <div className="pizza-card__body">
         <h2 className="pizza-card__name">{pizza.name}</h2>
         <p className="pizza-card__desc">{pizza.description}</p>
+        {pizza.ingredients?.length > 0 && <p className="pizza-card__includes">{pizza.ingredients.join(' · ')}</p>}
         <div className="pizza-card__footer">
           <span className="pizza-card__price">{formatPrice(pizza.price)}</span>
-          <Link className="btn" to="/builder" state={{ pizzaId: pizza.id }} aria-label={`Customize ${pizza.name}`}>
+          {/* The builder opens with this preset's ingredients selected; the price is the sum of those ingredients. */}
+          <Link
+            className="btn"
+            to="/builder"
+            state={{ preset: { name: pizza.name, selection: pizza.selection } }}
+            aria-label={`Customize ${pizza.name}`}
+          >
             Customize
           </Link>
         </div>
