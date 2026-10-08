@@ -13,7 +13,7 @@
 
 **Oasis Infobyte Internship (OIBSIP) — Web Development & Designing, Level 3**
 
-![Slice & Co. user dashboard](screenshots/02-user-dashboard.png)
+![Slice & Co. user dashboard](WebDev-L3-PizzaDelivery/screenshots/02-user-dashboard.png)
 
 </div>
 
@@ -76,16 +76,16 @@ Slice & Co. is a pizza ordering and inventory management web application with tw
 
 <table>
   <tr>
-    <td align="center"><img src="screenshots/01-login.png" alt="Login" width="100%"><br><sub><b>Customer login</b></sub></td>
-    <td align="center"><img src="screenshots/02-user-dashboard.png" alt="User dashboard" width="100%"><br><sub><b>Dashboard with six preset pizzas</b></sub></td>
+    <td align="center"><img src="WebDev-L3-PizzaDelivery/screenshots/01-login.png" alt="Login" width="100%"><br><sub><b>Customer login</b></sub></td>
+    <td align="center"><img src="WebDev-L3-PizzaDelivery/screenshots/02-user-dashboard.png" alt="User dashboard" width="100%"><br><sub><b>Dashboard with six preset pizzas</b></sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/03-pizza-builder.png" alt="Pizza builder" width="100%"><br><sub><b>4-step pizza builder</b></sub></td>
-    <td align="center"><img src="screenshots/04-order-summary.png" alt="Order summary" width="100%"><br><sub><b>Order summary with itemised prices</b></sub></td>
+    <td align="center"><img src="WebDev-L3-PizzaDelivery/screenshots/03-pizza-builder.png" alt="Pizza builder" width="100%"><br><sub><b>4-step pizza builder</b></sub></td>
+    <td align="center"><img src="WebDev-L3-PizzaDelivery/screenshots/04-order-summary.png" alt="Order summary" width="100%"><br><sub><b>Order summary with itemised prices</b></sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/06-admin-dashboard.png" alt="Admin dashboard" width="100%"><br><sub><b>Admin dashboard</b></sub></td>
-    <td align="center"><img src="screenshots/07-admin-inventory.png" alt="Admin inventory" width="100%"><br><sub><b>Inventory with a Low stock badge</b></sub></td>
+    <td align="center"><img src="WebDev-L3-PizzaDelivery/screenshots/06-admin-dashboard.png" alt="Admin dashboard" width="100%"><br><sub><b>Admin dashboard</b></sub></td>
+    <td align="center"><img src="WebDev-L3-PizzaDelivery/screenshots/07-admin-inventory.png" alt="Admin inventory" width="100%"><br><sub><b>Inventory with a Low stock badge</b></sub></td>
   </tr>
 </table>
 
@@ -258,7 +258,7 @@ All are read from `server/.env` (template: `server/.env.example`). The client ne
 
 ## API overview
 
-Base URL `http://localhost:5000/api`. Responses are `{ success, data | message }`. The full reference with bodies and status codes is in [docs/API.md](docs/API.md).
+Base URL `http://localhost:5000/api`. Responses are `{ success, data | message }`. The full reference with bodies and status codes is in [docs/API.md](WebDev-L3-PizzaDelivery/docs/API.md).
 
 | Method | Endpoint | Access | Purpose |
 | --- | --- | --- | --- |
@@ -315,7 +315,7 @@ A `node-cron` job checks stock on the `LOW_STOCK_CHECK_CRON` schedule and emails
 ```bash
 cd server && npm test
 ```
-The automated suite (157 tests) runs against a separate `pizza-delivery-test` database and cleans up after itself. Payment tests use a fake Razorpay gateway, email tests a fake mail transport, and the scheduler tests a fake cron library, so no real money, email or cron job is involved. One test waits for MongoDB's real TTL cleanup, so a full run takes a few minutes. Client checks: `cd client && npm run lint && npm run build`. Manual checklists: [docs/TESTING.md](docs/TESTING.md).
+The automated suite (157 tests) runs against a separate `pizza-delivery-test` database and cleans up after itself. Payment tests use a fake Razorpay gateway, email tests a fake mail transport, and the scheduler tests a fake cron library, so no real money, email or cron job is involved. One test waits for MongoDB's real TTL cleanup, so a full run takes a few minutes. Client checks: `cd client && npm run lint && npm run build`. Manual checklists: [docs/TESTING.md](WebDev-L3-PizzaDelivery/docs/TESTING.md).
 
 ## Known limitations
 
@@ -357,12 +357,12 @@ A common free setup is **Vercel** (client) + **Render** (server) + **MongoDB Atl
 
 ## Documentation
 
-- [API reference](docs/API.md)
-- [Requirements & traceability](docs/REQUIREMENTS.md)
-- [Testing notes](docs/TESTING.md)
-- [Demo checklist](docs/DEMO-CHECKLIST.md) · [Demo video script](docs/VIDEO-SCRIPT.md) · [LinkedIn post draft](docs/LINKEDIN-POST.md)
-- [Submission checklist](docs/SUBMISSION-CHECKLIST.md)
-- [Master specification](docs/OIBSIP_WebDev_Level3_PizzaDelivery_Master_Spec.md)
+- [API reference](WebDev-L3-PizzaDelivery/docs/API.md)
+- [Requirements & traceability](WebDev-L3-PizzaDelivery/docs/REQUIREMENTS.md)
+- [Testing notes](WebDev-L3-PizzaDelivery/docs/TESTING.md)
+- [Demo checklist](WebDev-L3-PizzaDelivery/docs/DEMO-CHECKLIST.md) · [Demo video script](WebDev-L3-PizzaDelivery/docs/VIDEO-SCRIPT.md) · [LinkedIn post draft](WebDev-L3-PizzaDelivery/docs/LINKEDIN-POST.md)
+- [Submission checklist](WebDev-L3-PizzaDelivery/docs/SUBMISSION-CHECKLIST.md)
+- [Master specification](WebDev-L3-PizzaDelivery/docs/OIBSIP_WebDev_Level3_PizzaDelivery_Master_Spec.md)
 
 ## Author
 
