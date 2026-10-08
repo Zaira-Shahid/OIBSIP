@@ -21,7 +21,11 @@ fs.mkdirSync(OUT, { recursive: true });
   try {
     await page.goto(`${BASE}/login`); await shot('01-login.png');
     await page.fill('#email', CUSTOMER.email); await page.fill('#password', CUSTOMER.password); await page.click('button[type=submit]');
-    await page.waitForURL('**/dashboard'); await page.waitForSelector('.pizza-card img'); await page.waitForTimeout(1500); await shot('02-user-dashboard.png');
+    await page.waitForURL('**/dashboard'); await page.waitForSelector('.pizza-card img');
+    // The photos are lazy-loaded from an external host: load them all and wait until every one has really arrived.
+    await page.evaluate(() => document.querySelectorAll('.pizza-card img').forEach((i) => { i.loading = 'eager'; }));
+    await page.waitForFunction(() => { const imgs = [...document.querySelectorAll('.pizza-card img')]; return imgs.length === 6 && imgs.every((i) => i.complete && i.naturalWidth > 0); }, null, { timeout: 60000 });
+    await shot('02-user-dashboard.png', true);
     await page.getByRole('link', { name: /Customize Margherita/ }).click(); await page.waitForURL('**/builder');
     await page.locator('input[type=radio]:not(:checked):not(:disabled)').first().check({ force: true });
     await page.getByRole('button', { name: 'Next' }).click();
